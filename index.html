@@ -48,6 +48,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
  linear-gradient(to bottom,transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
 .gridov.on{display:none!important}
 .guide-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.guide-ov.adj{pointer-events:auto;touch-action:none;outline:2px dashed rgba(255,255,255,.25);outline-offset:-6px}
+.guide-ov .gd,.guide-ov .gs{vector-effect:non-scaling-stroke}
 .guide-ov .gd{fill:none;stroke:#fff;stroke-opacity:.92;stroke-width:2.6;stroke-dasharray:15 11;stroke-linecap:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 .guide-ov .gs{fill:none;stroke:#fff;stroke-opacity:.5;stroke-width:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
 .guide-ov .gk{fill:#fff;fill-opacity:.9}
@@ -55,7 +57,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .guide-lab.show{opacity:1}.guide-lab b{display:block;font-size:15px;letter-spacing:.28em;text-transform:uppercase;font-weight:600}.guide-lab small{display:block;margin-top:14px;font-size:12px;letter-spacing:.04em;opacity:.7;font-family:inherit}
 .gpills{position:absolute;left:0;right:0;bottom:8px;display:none;gap:8px;overflow-x:auto;padding:6px 12px;scrollbar-width:none;z-index:5}.gpills::-webkit-scrollbar{display:none}.gpills.on{display:flex}
 .gpills button{flex:none;font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.82);background:rgba(28,26,26,.62);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.gpills button.on{color:#cfe0ff;border-color:rgba(160,190,255,.7);background:rgba(24,28,40,.78)}
+.gtools{position:absolute;left:0;right:0;z-index:6;display:none;justify-content:center;gap:8px;z-index:5}.gtools.on{display:flex}.gtools button{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(28,26,26,.7);border:1px dashed rgba(255,255,255,.35);border-radius:999px;padding:9px 15px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}.gtools button.on{color:#cfe0ff;border-color:rgba(160,190,255,.8)}
+.gpills button.tool{letter-spacing:.08em;border-style:dashed}.gpills button.on{color:#cfe0ff;border-color:rgba(160,190,255,.7);background:rgba(24,28,40,.78)}
 .lk-bar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:40;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:18px;background:rgba(22,22,28,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .lookcard.sel{outline:2px solid var(--acc);outline-offset:-2px}.lookcard .pick{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.55);flex:none;display:grid;place-items:center;color:#1a1205}.lookcard.sel .pick{background:var(--acc);border-color:var(--acc)}
 .reticle{position:absolute;width:74px;height:74px;margin:-37px 0 0 -37px;border:1.5px solid var(--acc);border-radius:6px;pointer-events:none;opacity:0;transform:scale(1.25)}
@@ -333,7 +336,7 @@ body.booting #app>:not(#splash){visibility:hidden}
       <div class="finder" id="finder">
         <canvas id="camCanvas" aria-label="Live viewfinder"></canvas>
         <div class="gridov" id="gridov"></div>
-        <svg class="guide-ov" id="guide-ov" aria-hidden="true"></svg><div class="guide-lab" id="guide-lab"><b></b><small>Tap again to flip</small></div><div class="gpills" id="gpills" role="group" aria-label="Composition guides"></div>
+        <svg class="guide-ov" id="guide-ov" aria-hidden="true"></svg><div class="guide-lab" id="guide-lab"><b></b><small>Tap again to flip</small></div><div class="gtools" id="gtools"></div><div class="gpills" id="gpills" role="group" aria-label="Composition guides"></div>
         <div class="reticle" id="reticle"></div>
         <div class="countdown" id="countdown" aria-live="assertive"></div>
         <div class="blink" id="blink"></div>
@@ -1180,7 +1183,7 @@ function camLoop(){
   const cr=cropFor(rec.aspect,0,vw,vh,1);
   const wrap=finder.parentElement,W=wrap.clientWidth,H=wrap.clientHeight;
   const key=cr.r.toFixed(4)+'|'+W+'|'+H;
-  if(key!==lastCamSize){lastCamSize=key;let w=W,h=W/cr.r;if(h>H){h=H;w=H*cr.r}finder.style.width=Math.floor(w)+'px';finder.style.height=Math.floor(h)+'px';requestAnimationFrame(drawGuide)}
+  if(key!==lastCamSize){lastCamSize=key;let w=W,h=W/cr.r;if(h>H){h=H;w=H*cr.r}finder.style.width=Math.floor(w)+'px';finder.style.height=Math.floor(h)+'px'}
   const cw=finder.clientWidth,ch=finder.clientHeight;if(!cw||!ch)return;
   const dpr=Math.min(devicePixelRatio||1,3),k=Math.min(1,(S.set.previewQ==='std'?1100:1600)/Math.max(cw*dpr,ch*dpr));
   camCanvas.classList.toggle('mirror',cam.facing==='user');
@@ -1188,46 +1191,89 @@ function camLoop(){
 }
 /* ---------- composition guides ---------- */
 const GUIDES=[['thirds','Thirds'],['triangle','Triangle'],['aerial','Aerial Tri'],['flatlay','Flatlay'],['portrait','Portrait']];
-let guideLabT=null;
+let guideLabT=null;S.gtf=store.get('gtf',{});S.guideAdj=false;
+const gtf=()=>S.gtf[S.guide]||(S.gtf[S.guide]={x:0,y:0,r:0,s:1});
+const saveGtf=()=>store.set('gtf',S.gtf);
+(()=>{const wrap=finder.parentElement;wrap.style.position='relative';wrap.appendChild($('#gtools'));wrap.appendChild($('#gpills'))})();
+function guideSafe(){ // visible area of the preview: clear of the top bar and the lens / aspect controls that overlay it in Full mode
+  const w=finder.clientWidth,h=finder.clientHeight,fr=finder.getBoundingClientRect();let top=0,bot=h;
+  try{const ro=$('#readout').getBoundingClientRect();if(ro.height&&ro.top<fr.bottom-4&&ro.top>fr.top+h*.35)bot=ro.top-fr.top-6;
+    const tb=$('#b-grid').parentElement.getBoundingClientRect();if(tb.bottom>fr.top&&tb.bottom<fr.top+h*.45)top=tb.bottom-fr.top+6}catch{}
+  const need=S.guide==='off'?0:(S.guide==='thirds'?58:100);
+  const roT=$('#readout').getBoundingClientRect().top,free=roT-fr.bottom;const outside=need>0&&free>=need-4;
+  if(!outside)bot=Math.max(top+h*.3,bot-need);
+  return{w,h,top,bot,pill:need,outside,fr};
+}
 function drawGuide(){
-  const el=$('#guide-ov');if(!el)return;const w=finder.clientWidth,h=finder.clientHeight;if(!w||!h)return;
-  const g=S.guide,f=S.guideFlip;if(g==='off'){el.innerHTML='';return}
-  const m=Math.min(w,h),R=m*.125,X=x=>+(x*w).toFixed(1),Y=y=>+(y*h).toFixed(1);let o='';
+  const el=$('#guide-ov');if(!el)return;const W=finder.clientWidth,H=finder.clientHeight;if(!W||!H)return;
+  const g=S.guide,f=S.guideFlip;el.classList.toggle('adj',!!S.guideAdj&&g!=='off'&&g!=='thirds');
+  const pp=$('#gpills');
+  if(g==='off'){el.innerHTML='';if(pp)pp.style.bottom='';const gt0=$('#gtools');if(gt0)gt0.classList.remove('on');return}
+  const sf=guideSafe(),w=sf.w,h=sf.bot-sf.top,y0=sf.top;
+  const wr=finder.parentElement.getBoundingClientRect(),gtE=$('#gtools'),th=S.guide==='thirds'?0:44;
+  const base=sf.outside?(sf.fr.bottom-wr.top+6):(sf.fr.top-wr.top+sf.bot+6);
+  if(pp){pp.style.bottom='auto';pp.style.top=(base+th)+'px'}if(gtE){gtE.style.bottom='auto';gtE.style.top=base+'px'}
+  const m=Math.min(w,h),R=m*.125;
+  const X=x=>+(x*w).toFixed(1),Y=y=>+(y0+y*h).toFixed(1);let o='';
   const circ=(x,y,r=R)=>`<circle class="gd" cx="${X(x)}" cy="${Y(y)}" r="${+r.toFixed(1)}"/>`;
-  const link=(a,b)=>{const ax=a[0]*w,ay=a[1]*h,bx=b[0]*w,by=b[1]*h,d=Math.hypot(bx-ax,by-ay)||1,ux=(bx-ax)/d,uy=(by-ay)/d;
+  const link=(a,b)=>{const ax=a[0]*w,ay=y0+a[1]*h,bx=b[0]*w,by=y0+b[1]*h,d=Math.hypot(bx-ax,by-ay)||1,ux=(bx-ax)/d,uy=(by-ay)/d;
     return `<line class="gd" x1="${+(ax+ux*R*1.02).toFixed(1)}" y1="${+(ay+uy*R*1.02).toFixed(1)}" x2="${+(bx-ux*R*1.02).toFixed(1)}" y2="${+(by-uy*R*1.02).toFixed(1)}"/>`};
   const tri=(P,mark)=>{o+=link(P[0],P[1])+link(P[1],P[2])+link(P[2],P[0]);P.forEach(p=>o+=circ(p[0],p[1]));
-    if(mark){const[x,y]=[X(P[0][0]),Y(P[0][1])],k=R*.32;o+=`<path class="gd" style="stroke-dasharray:none" d="M${x-k} ${y+k*.6} L${x} ${y-k*.7} L${x+k} ${y+k*.6}"/>`}};
+    if(mark){const x=X(P[0][0]),y=Y(P[0][1]),k=R*.32;o+=`<path class="gd" style="stroke-dasharray:none" d="M${x-k} ${y+k*.6} L${x} ${y-k*.7} L${x+k} ${y+k*.6}"/>`}};
+  let body='';
   if(g==='thirds'){
-    for(const t of [1/3,2/3]){o+=`<line class="gs" x1="${X(t)}" y1="0" x2="${X(t)}" y2="${h}"/><line class="gs" x1="0" y1="${Y(t)}" x2="${w}" y2="${Y(t)}"/>`}
+    for(const t of [1/3,2/3]){o+=`<line class="gs" x1="${X(t)}" y1="${y0}" x2="${X(t)}" y2="${y0+h}"/><line class="gs" x1="0" y1="${Y(t)}" x2="${w}" y2="${Y(t)}"/>`}
     for(const a of [1/3,2/3])for(const b of [1/3,2/3])o+=circ(a,b,m*.04);
-  }else if(g==='triangle'){
-    const P=f%2?[[.5,.72],[.22,.32],[.78,.32]]:[[.5,.28],[.22,.68],[.78,.68]];tri(P,true);
-  }else if(g==='aerial'){
-    let P=[[.44,.28],[.30,.63],[.68,.57]];if(f%2)P=P.map(p=>[1-p[0],p[1]]);tri(P,true);
+    el.setAttribute('viewBox',`0 0 ${W} ${H}`);el.innerHTML=o;return;
+  }else if(g==='triangle'){tri(f%2?[[.5,.74],[.24,.30],[.76,.30]]:[[.5,.26],[.24,.70],[.76,.70]],true);
+  }else if(g==='aerial'){let P=[[.44,.26],[.30,.64],[.70,.58]];if(f%2)P=P.map(p=>[1-p[0],p[1]]);tri(P,true);
   }else if(g==='flatlay'){
-    const c=[.5,.5];
-    if(f%2){const s=.30*m;o+=`<rect class="gd" x="${X(.5)-s}" y="${Y(.5)-s}" width="${2*s}" height="${2*s}" transform="rotate(45 ${X(.5)} ${Y(.5)})"/>`}
-    else o+=circ(.5,.5,m*.30);
-    o+=`<line class="gs" x1="${X(.5)}" y1="0" x2="${X(.5)}" y2="${h}"/><line class="gs" x1="0" y1="${Y(.5)}" x2="${w}" y2="${Y(.5)}"/>`;
-    o+=`<circle class="gk" cx="${X(.5)}" cy="${Y(.5)}" r="3.5"/>`;
-    for(const a of [.16,.84])for(const b of [.14,.86])o+=circ(a,b,m*.06);
+    if(f%2){const s=.30*m;o+=`<rect class="gd" x="${X(.5)-s}" y="${Y(.5)-s}" width="${2*s}" height="${2*s}" transform="rotate(45 ${X(.5)} ${Y(.5)})"/>`}else o+=circ(.5,.5,m*.30);
+    o+=`<line class="gs" x1="${X(.5)}" y1="${y0}" x2="${X(.5)}" y2="${y0+h}"/><line class="gs" x1="0" y1="${Y(.5)}" x2="${w}" y2="${Y(.5)}"/><circle class="gk" cx="${X(.5)}" cy="${Y(.5)}" r="3.5"/>`;
+    for(const a of [.14,.86])for(const b of [.12,.88])o+=circ(a,b,m*.06);
   }else if(g==='portrait'){
-    const cx=f%2?.64:.36,cy=.34;
-    o+=`<ellipse class="gd" cx="${X(cx)}" cy="${Y(cy)}" rx="${+(w*.17).toFixed(1)}" ry="${+(h*.15).toFixed(1)}"/>`;
-    o+=`<line class="gd" x1="${X(cx-.12)}" y1="${Y(cy-.02)}" x2="${X(cx+.12)}" y2="${Y(cy-.02)}"/>`;
-    o+=`<path class="gd" fill="none" d="M${X(cx-.34)} ${Y(.86)} C${X(cx-.30)} ${Y(.62)} ${X(cx-.12)} ${Y(.55)} ${X(cx)} ${Y(.55)} C${X(cx+.12)} ${Y(.55)} ${X(cx+.30)} ${Y(.62)} ${X(cx+.34)} ${Y(.86)}"/>`;
-    o+=`<line class="gs" x1="${X(1/3)}" y1="0" x2="${X(1/3)}" y2="${h}"/><line class="gs" x1="${X(2/3)}" y1="0" x2="${X(2/3)}" y2="${h}"/>`;
+    const cx=f%2?.64:.36,cy=.33,ry=Math.min(h*.15,w*.24),rx=ry*.8;
+    o+=`<ellipse class="gd" cx="${X(cx)}" cy="${Y(cy)}" rx="${+rx.toFixed(1)}" ry="${+ry.toFixed(1)}"/><line class="gd" x1="${+(X(cx)-rx*.7).toFixed(1)}" y1="${Y(cy-.02)}" x2="${+(X(cx)+rx*.7).toFixed(1)}" y2="${Y(cy-.02)}"/>`;
+    const sw=Math.min(.34,.4*h/w*.9);
+    o+=`<path class="gd" d="M${X(cx-sw)} ${Y(.92)} C${X(cx-sw*.9)} ${Y(.66)} ${X(cx-sw*.4)} ${Y(.58)} ${X(cx)} ${Y(.58)} C${X(cx+sw*.4)} ${Y(.58)} ${X(cx+sw*.9)} ${Y(.66)} ${X(cx+sw)} ${Y(.92)}"/>`;
+    o+=`<line class="gs" x1="${X(1/3)}" y1="${y0}" x2="${X(1/3)}" y2="${y0+h}"/><line class="gs" x1="${X(2/3)}" y1="${y0}" x2="${X(2/3)}" y2="${y0+h}"/>`;
   }
-  el.setAttribute('viewBox',`0 0 ${w} ${h}`);el.innerHTML=o;
+  const t=gtf(),cx=w/2,cy=y0+h/2;
+  body=`<g transform="translate(${+(t.x*w).toFixed(1)} ${+(t.y*h).toFixed(1)}) translate(${cx} ${cy}) rotate(${+t.r.toFixed(1)}) scale(${+t.s.toFixed(3)}) translate(${-cx} ${-cy})">${o}</g>`;
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);el.innerHTML=body;
 }
-function showGuideLabel(){const l=$('#guide-lab'),G=GUIDES.find(x=>x[0]===S.guide);if(!l||!G)return;l.firstElementChild.textContent=G[1];l.classList.add('show');clearTimeout(guideLabT);guideLabT=setTimeout(()=>l.classList.remove('show'),2300)}
+function showGuideLabel(txt){const l=$('#guide-lab'),G=GUIDES.find(x=>x[0]===S.guide);if(!l||!G)return;l.firstElementChild.textContent=txt?G[1]:G[1];
+  l.lastElementChild.textContent=txt||(S.guide==='thirds'?'':'Tap again to flip');
+  const sf=guideSafe();l.style.top=(sf.top+Math.max(10,(sf.bot-sf.top)*.04))+'px';l.classList.add('show');clearTimeout(guideLabT);guideLabT=setTimeout(()=>l.classList.remove('show'),txt?3200:2300)}
 function renderGuidePills(){
   const p=$('#gpills');if(!p)return;p.classList.toggle('on',S.guide!=='off');p.innerHTML='';
-  GUIDES.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.className=S.guide===k?'on':'';
-    b.onclick=()=>{if(S.guide===k){S.guideFlip++}else{S.guide=k;S.guideFlip=0}store.set('guide',S.guide);haptic(8);drawGuide();renderGuidePills();showGuideLabel()};p.appendChild(b)});
+  const gt=$('#gtools');gt.innerHTML='';const showT=S.guide!=='off'&&S.guide!=='thirds';gt.classList.toggle('on',showT);
+  gt.onpointerdown=e=>e.stopPropagation();gt.onpointermove=e=>e.stopPropagation();gt.onpointerup=e=>e.stopPropagation();
+  const add=(txt,on,fn,extra)=>{const b=document.createElement('button');b.textContent=txt;b.className=(on?'on ':'')+(extra||'');b.onclick=fn;(extra==='tool'?gt:p).appendChild(b);return b};
+  GUIDES.forEach(([k,l])=>add(l,S.guide===k,()=>{if(S.guide===k){S.guideFlip++}else{S.guide=k;S.guideFlip=0;S.guideAdj=false}store.set('guide',S.guide);haptic(8);drawGuide();renderGuidePills();showGuideLabel()}));
+  if(S.guide!=='off'&&S.guide!=='thirds'){
+    add('↻ Rotate',false,()=>{const t=gtf();t.r=((Math.round(t.r/15)*15+15)%360);saveGtf();haptic(6);drawGuide()},'tool');
+    add(S.guideAdj?'Done':'✥ Adjust',S.guideAdj,()=>{S.guideAdj=!S.guideAdj;drawGuide();renderGuidePills();if(S.guideAdj)showGuideLabel('Drag to move · twist to rotate · pinch to resize')},'tool');
+    const t=S.gtf[S.guide];if(t&&(t.x||t.y||t.r||t.s!==1))add('Reset',false,()=>{delete S.gtf[S.guide];saveGtf();drawGuide();renderGuidePills()},'tool');
+  }
   p.onpointerdown=e=>e.stopPropagation();p.onpointermove=e=>e.stopPropagation();p.onpointerup=e=>e.stopPropagation();
 }
+/* drag / twist / pinch the guide while Adjust is on */
+(()=>{const el=$('#guide-ov');if(!el)return;const pts=new Map();let snap=null;
+  const take=()=>{const a=[...pts.values()];const t=gtf();snap={t:{...t},n:a.length,x:a.reduce((s,p)=>s+p.x,0)/a.length,y:a.reduce((s,p)=>s+p.y,0)/a.length,
+    d:a.length>1?Math.hypot(a[1].x-a[0].x,a[1].y-a[0].y):0,ang:a.length>1?Math.atan2(a[1].y-a[0].y,a[1].x-a[0].x):0}};
+  el.addEventListener('pointerdown',e=>{if(!S.guideAdj)return;e.stopPropagation();e.preventDefault();try{el.setPointerCapture(e.pointerId)}catch{}pts.set(e.pointerId,{x:e.clientX,y:e.clientY});take()});
+  el.addEventListener('pointermove',e=>{if(!S.guideAdj||!pts.has(e.pointerId))return;e.stopPropagation();pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const a=[...pts.values()],t=gtf(),w=finder.clientWidth,h=finder.clientHeight;if(!snap||snap.n!==a.length){take();return}
+    const mx=a.reduce((s,p)=>s+p.x,0)/a.length,my=a.reduce((s,p)=>s+p.y,0)/a.length;
+    t.x=Math.max(-.6,Math.min(.6,snap.t.x+(mx-snap.x)/w));t.y=Math.max(-.6,Math.min(.6,snap.t.y+(my-snap.y)/h));
+    if(a.length>1){const d=Math.hypot(a[1].x-a[0].x,a[1].y-a[0].y),ang=Math.atan2(a[1].y-a[0].y,a[1].x-a[0].x);
+      t.s=Math.max(.45,Math.min(2.4,snap.t.s*(d/(snap.d||1))));t.r=snap.t.r+(ang-snap.ang)*180/Math.PI}
+    drawGuide()});
+  const up=e=>{if(pts.delete(e.pointerId)){if(pts.size)take();else saveGtf();renderGuidePills()}e.stopPropagation&&e.stopPropagation()};
+  el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+  try{new ResizeObserver(()=>drawGuide()).observe(finder)}catch{}
+})();
 const UNITS=[['s8','Super8',5.79],['s16','Super16',12.52],['m43','Micro-Four Thirds',17.3],['s35','Super35 / APS-C',24.89],['vv','VistaVision / Stills 35',36],['p5','5-perf 65mm',52.48],['p15','15-perf 65mm',70.41],['apple','Apple “Zoom Factor”'],['dwr','Distance-To-Width Ratio'],['fov','Field of View (°)'],['custom','Custom']];
 function fovRad(z){const vw=video.videoWidth||16,vh=video.videoHeight||9,land=vw>=vh,Wff=land?34.6:25.95;
   const cx=cropFor(S.aspect,0,vw,vh,1).cx,f=(S.set.refMm||24)*z;return 2*Math.atan(Wff*cx/(2*f))}
