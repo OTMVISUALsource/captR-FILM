@@ -251,6 +251,8 @@ svg.i{stroke-width:1.65}
 .chip{background:var(--s2);border:1px solid var(--line);height:34px;border-radius:17px;font-size:13px;color:var(--tx)}
 .chip[aria-pressed=true],.chip.on{background:linear-gradient(180deg,rgba(230,208,160,.22),rgba(230,208,160,.08));border-color:rgba(230,208,160,.55);color:var(--acc)}
 .chip.fmt{background:rgba(0,0,0,.35);border-color:var(--line)}
+@media(max-width:410px){.chip.fmt{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;padding:0 8px}#wordmark{transform:scale(.8)}#s-camera .topbar .ib{width:40px;height:40px}}
+@media(max-width:385px){.chip.fmt{max-width:none;overflow:visible}#wordmark{display:none}}
 .btn{background:linear-gradient(135deg,#f3e2b9,#c99d5e);color:#1b1306;box-shadow:0 8px 24px rgba(201,157,94,.28)}
 .btn.ghost{background:var(--s2);color:var(--tx);box-shadow:none;border:1px solid var(--line)}
 .set,.lookcard,.sheet{background:rgba(255,255,255,.05);border:1px solid var(--line)}
@@ -268,7 +270,7 @@ svg.i{stroke-width:1.65}
 #s-camera .topbar .mark svg{height:19px;width:auto;opacity:.95}
 #s-camera .finder-wrap{position:absolute;inset:0;padding:0;z-index:1}
 #s-camera .finder{border-radius:0}
-.cam-bottom{position:absolute;left:0;right:0;bottom:calc(var(--tabh) + var(--sab) + 22px);z-index:5;padding-top:46px;background:linear-gradient(transparent,rgba(0,0,0,.55) 38%,rgba(0,0,0,.78))}
+.cam-bottom{position:absolute;left:0;right:0;bottom:calc(-1 * (var(--tabh) + var(--sab)));z-index:5;padding-top:64px;padding-bottom:calc(var(--tabh) + var(--sab) + 22px);background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.5) 30%,rgba(0,0,0,.82) 62%,#000 100%)}
 .readout{padding:0 18px 6px;text-shadow:0 1px 6px #000}
 .shots{padding:2px 14px 4px;gap:10px}
 .shot{background:var(--glass);border:1px solid var(--line);border-radius:16px;height:52px}
@@ -1191,7 +1193,7 @@ function camLoop(){
 }
 /* ---------- composition guides ---------- */
 const GUIDES=[['thirds','Thirds'],['triangle','Triangle'],['aerial','Aerial Tri'],['flatlay','Flatlay'],['portrait','Portrait']];
-let guideLabT=null;S.gtf=store.get('gtf',{});S.guideAdj=false;
+let guideLabT=null;S.gtf=store.get('gtf',{});S.gdots=store.get('gdots',true);S.guideAdj=false;
 const gtf=()=>S.gtf[S.guide]||(S.gtf[S.guide]={x:0,y:0,r:0,s:1});
 const saveGtf=()=>store.set('gtf',S.gtf);
 (()=>{const wrap=finder.parentElement;wrap.style.position='relative';wrap.appendChild($('#gtools'));wrap.appendChild($('#gpills'))})();
@@ -1199,7 +1201,7 @@ function guideSafe(){ // visible area of the preview: clear of the top bar and t
   const w=finder.clientWidth,h=finder.clientHeight,fr=finder.getBoundingClientRect();let top=0,bot=h;
   try{const ro=$('#readout').getBoundingClientRect();if(ro.height&&ro.top<fr.bottom-4&&ro.top>fr.top+h*.35)bot=ro.top-fr.top-6;
     const tb=$('#b-grid').parentElement.getBoundingClientRect();if(tb.bottom>fr.top&&tb.bottom<fr.top+h*.45)top=tb.bottom-fr.top+6}catch{}
-  const need=S.guide==='off'?0:(S.guide==='thirds'?58:100);
+  const need=S.guide==='off'?0:100;
   const roT=$('#readout').getBoundingClientRect().top,free=roT-fr.bottom;const outside=need>0&&free>=need-4;
   if(!outside)bot=Math.max(top+h*.3,bot-need);
   return{w,h,top,bot,pill:need,outside,fr};
@@ -1210,7 +1212,7 @@ function drawGuide(){
   const pp=$('#gpills');
   if(g==='off'){el.innerHTML='';if(pp)pp.style.bottom='';const gt0=$('#gtools');if(gt0)gt0.classList.remove('on');return}
   const sf=guideSafe(),w=sf.w,h=sf.bot-sf.top,y0=sf.top;
-  const wr=finder.parentElement.getBoundingClientRect(),gtE=$('#gtools'),th=S.guide==='thirds'?0:44;
+  const wr=finder.parentElement.getBoundingClientRect(),gtE=$('#gtools'),th=44;
   const base=sf.outside?(sf.fr.bottom-wr.top+6):(sf.fr.top-wr.top+sf.bot+6);
   if(pp){pp.style.bottom='auto';pp.style.top=(base+th)+'px'}if(gtE){gtE.style.bottom='auto';gtE.style.top=base+'px'}
   const m=Math.min(w,h),R=m*.125;
@@ -1223,7 +1225,7 @@ function drawGuide(){
   let body='';
   if(g==='thirds'){
     for(const t of [1/3,2/3]){o+=`<line class="gs" x1="${X(t)}" y1="${y0}" x2="${X(t)}" y2="${y0+h}"/><line class="gs" x1="0" y1="${Y(t)}" x2="${w}" y2="${Y(t)}"/>`}
-    for(const a of [1/3,2/3])for(const b of [1/3,2/3])o+=circ(a,b,m*.04);
+    if(S.gdots)for(const a of [1/3,2/3])for(const b of [1/3,2/3])o+=circ(a,b,m*.04);
     el.setAttribute('viewBox',`0 0 ${W} ${H}`);el.innerHTML=o;return;
   }else if(g==='triangle'){tri(f%2?[[.5,.74],[.24,.30],[.76,.30]]:[[.5,.26],[.24,.70],[.76,.70]],true);
   }else if(g==='aerial'){let P=[[.44,.26],[.30,.64],[.70,.58]];if(f%2)P=P.map(p=>[1-p[0],p[1]]);tri(P,true);
@@ -1247,10 +1249,11 @@ function showGuideLabel(txt){const l=$('#guide-lab'),G=GUIDES.find(x=>x[0]===S.g
   const sf=guideSafe();l.style.top=(sf.top+Math.max(10,(sf.bot-sf.top)*.04))+'px';l.classList.add('show');clearTimeout(guideLabT);guideLabT=setTimeout(()=>l.classList.remove('show'),txt?3200:2300)}
 function renderGuidePills(){
   const p=$('#gpills');if(!p)return;p.classList.toggle('on',S.guide!=='off');p.innerHTML='';
-  const gt=$('#gtools');gt.innerHTML='';const showT=S.guide!=='off'&&S.guide!=='thirds';gt.classList.toggle('on',showT);
+  const gt=$('#gtools');gt.innerHTML='';const showT=S.guide!=='off';gt.classList.toggle('on',showT);
   gt.onpointerdown=e=>e.stopPropagation();gt.onpointermove=e=>e.stopPropagation();gt.onpointerup=e=>e.stopPropagation();
   const add=(txt,on,fn,extra)=>{const b=document.createElement('button');b.textContent=txt;b.className=(on?'on ':'')+(extra||'');b.onclick=fn;(extra==='tool'?gt:p).appendChild(b);return b};
   GUIDES.forEach(([k,l])=>add(l,S.guide===k,()=>{if(S.guide===k){S.guideFlip++}else{S.guide=k;S.guideFlip=0;S.guideAdj=false}store.set('guide',S.guide);haptic(8);drawGuide();renderGuidePills();showGuideLabel()}));
+  if(S.guide==='thirds')add(S.gdots?'● Circles: On':'○ Circles: Off',S.gdots,()=>{S.gdots=!S.gdots;store.set('gdots',S.gdots);haptic(6);drawGuide();renderGuidePills()},'tool');
   if(S.guide!=='off'&&S.guide!=='thirds'){
     add('↻ Rotate',false,()=>{const t=gtf();t.r=((Math.round(t.r/15)*15+15)%360);saveGtf();haptic(6);drawGuide()},'tool');
     add(S.guideAdj?'Done':'✥ Adjust',S.guideAdj,()=>{S.guideAdj=!S.guideAdj;drawGuide();renderGuidePills();if(S.guideAdj)showGuideLabel('Drag to move · twist to rotate · pinch to resize')},'tool');
