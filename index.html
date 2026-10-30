@@ -208,6 +208,7 @@ body.native-cam,body.native-cam html,body.native-cam #app{background:transparent
 body.native-cam #s-camera .finder{background:transparent}
 body.native-cam #camCanvas{display:none}
 html:has(body.native-cam){background:transparent}
+.tabscroll{display:flex;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}.tabscroll::-webkit-scrollbar{display:none}.tabscroll button.t{flex:none;min-width:62px}
 .hidden{display:none!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
@@ -273,14 +274,42 @@ svg.i{stroke-width:1.65}
 .gate .logo{width:92px;height:92px;filter:drop-shadow(0 18px 40px rgba(201,157,94,.25))}
 .gate .wm{height:22px;color:var(--tx);margin:2px 0 6px}
 @media (display-mode:standalone){.tabs{bottom:calc(6px + var(--sab))}}
+
+[hidden]{display:none!important}
+body.booting #app>:not(#splash){visibility:hidden}
+.ib.brand{width:44px;height:44px;padding:0;background:transparent;border:0;margin:0 4px 0 0}
+.ib.brand svg{width:40px;height:40px;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+#splash{position:absolute;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(120% 80% at 50% 38%,#1c1b20 0%,#09090b 55%,#040405 100%);transition:opacity .7s cubic-bezier(.4,0,.2,1),visibility .7s,transform .7s}
+#splash.hide{opacity:0;visibility:hidden;transform:scale(1.04)}
+.sp-glow{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(233,169,79,.22),rgba(233,169,79,0) 62%);animation:spglow 3.2s ease-in-out infinite}
+.sp-logo{position:relative;width:132px;height:132px;animation:splogo .9s cubic-bezier(.2,.8,.2,1) both}
+.sp-logo svg{width:100%;height:100%;display:block;filter:drop-shadow(0 22px 50px rgba(201,157,94,.28))}
+.sp-logo .ring{stroke-dasharray:760;stroke-dashoffset:760;animation:spdraw 1.15s .25s cubic-bezier(.5,0,.2,1) forwards}
+.sp-logo .dot{transform-origin:350px 256px;opacity:0;animation:spdot .6s 1s cubic-bezier(.2,1.4,.3,1) forwards}
+.sp-logo .halo{transform-origin:350px 256px;opacity:0;animation:sphalo 1.8s 1.2s ease-out infinite}
+.sp-wm{position:relative;margin-top:30px;height:26px;color:#f4f1ea;opacity:0;animation:spup .8s .9s ease-out forwards}
+.sp-wm svg{height:100%;width:auto;display:block}
+.sp-tag{position:relative;margin-top:14px;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#8e8b84;opacity:0;animation:spup .8s 1.15s ease-out forwards}
+.sp-bar{position:absolute;bottom:calc(64px + var(--sab));width:120px;height:2px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden;opacity:0;animation:spup .6s 1.2s ease-out forwards}
+.sp-bar i{display:block;height:100%;width:40%;border-radius:2px;background:linear-gradient(90deg,transparent,#e9c98f,transparent);animation:spbar 1.2s ease-in-out infinite}
+@keyframes spdraw{to{stroke-dashoffset:0}}
+@keyframes splogo{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+@keyframes spdot{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+@keyframes sphalo{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(1.8)}}
+@keyframes spup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes spbar{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+@keyframes spglow{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.sp-logo .ring{stroke-dashoffset:0;animation:none}.sp-logo .dot{opacity:1;animation:none}.sp-glow,.sp-bar i,.sp-logo .halo{animation:none}.sp-wm,.sp-tag,.sp-bar{opacity:1;animation:none}.sp-logo{animation:none}}
 </style>
 </head>
-<body>
+<body class="booting">
 <div id="app">
+  <div id="splash" aria-hidden="true"><div class="sp-glow"></div><div class="sp-logo" id="sp-logo"></div><div class="sp-wm" id="sp-wm"></div><div class="sp-tag">Capture with intention</div><div class="sp-bar"><i></i></div></div>
 
   <!-- CAMERA -->
   <section class="screen active" id="s-camera" aria-label="Camera">
     <div class="topbar">
+      <button class="ib brand" id="b-brand" aria-label="About CAPTR"></button>
       <button class="ib" id="b-flash" aria-label="Flash" hidden></button>
       <button class="chip fmt" id="b-fmt" aria-label="Capture format details">JPEG</button>
       <div class="mark" id="wordmark" aria-label="CAPTR"></div>
@@ -448,6 +477,7 @@ aspect:'<rect x="3" y="6.5" width="18" height="11" rx="2.6"/><path class="f" d="
 heart:'<path d="M12 20.4S4 15.2 4 9.6A4.4 4.4 0 0112 7.2a4.4 4.4 0 018 2.4c0 5.6-8 10.8-8 10.8z"/>',
 tone:'<path d="M4.5 19.5V4.5M4.5 19.5h15"/><path d="M7 16.5c5.5 0 3.5-9.5 11-9.5"/>',
 palette:'<path d="M12 3.2a8.8 8.8 0 100 17.6c1.4 0 2.1-.9 2.1-1.9 0-1.2-.9-1.6-.9-2.7 0-1 .8-1.7 1.8-1.7h2A4 4 0 0021 9.4C21 5.8 17 3.2 12 3.2z"/><circle class="f" cx="7.6" cy="11" r="1.1"/><circle class="f" cx="10.4" cy="7.2" r="1.1"/><circle class="f" cx="15.2" cy="7.2" r="1.1"/>',
+engine:'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.4"/><circle class="f" cx="12" cy="12" r="3.4"/>',
 drop:'<path d="M12 3.4c3.4 4.3 6 7.3 6 10.7a6 6 0 01-12 0c0-3.4 2.6-6.4 6-10.7z"/><path class="f" d="M12 3.4c3.4 4.3 6 7.3 6 10.7a6 6 0 01-12 0c0-3.4 2.6-6.4 6-10.7z"/>',
 texture:'<circle cx="12" cy="12" r="1.4"/><circle cx="7" cy="8" r="1.1"/><circle cx="17" cy="8" r="1.1"/><circle cx="8" cy="16.6" r="1.1"/><circle cx="16.6" cy="16" r="1.1"/><circle cx="12" cy="4.8" r="1"/><circle cx="12" cy="19.6" r="1"/><circle cx="4.6" cy="12.6" r="1"/><circle cx="19.6" cy="12.2" r="1"/>',
 crop:'<path d="M7 3v13a1 1 0 001 1h13M3 7h13a1 1 0 011 1v13"/>',
@@ -471,6 +501,21 @@ const WORDMARK_SVG=`<svg viewBox="0 0 142 40" xmlns="http://www.w3.org/2000/svg"
       let a=document.querySelector('link[rel=apple-touch-icon]');if(!a){a=document.createElement('link');a.rel='apple-touch-icon';document.head.appendChild(a)}a.href=c.toDataURL('image/png')}catch{}};img.src=url;
   }catch{}
 })();
+
+/* ---------- splash + brand button ---------- */
+const SPLASH_LOGO=`<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#202026"/><stop offset="1" stop-color="#050506"/></linearGradient><linearGradient id="srg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbefcf"/><stop offset="1" stop-color="#c99d5e"/></linearGradient><radialGradient id="sdg" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#ffd993"/><stop offset="1" stop-color="#e0903a"/></radialGradient></defs><rect width="512" height="512" rx="118" fill="url(#sbg)"/><rect x="3" y="3" width="506" height="506" rx="115" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width="3"/><path class="ring" d="M356 168A132 132 0 1 0 356 344" fill="none" stroke="url(#srg)" stroke-width="40" stroke-linecap="round"/><circle class="halo" cx="350" cy="256" r="34" fill="none" stroke="#e0903a" stroke-width="4"/><circle class="dot" cx="350" cy="256" r="27" fill="url(#sdg)"/></svg>`;
+(function initBrand(){
+  const sl=document.getElementById('sp-logo'),sw=document.getElementById('sp-wm');if(sl)sl.innerHTML=SPLASH_LOGO;if(sw)sw.innerHTML=WORDMARK_SVG;
+  const bb=document.getElementById('b-brand');if(bb){bb.innerHTML=LOGO_SVG('b');
+    bb.onclick=()=>sheet(`<div style="display:flex;gap:16px;align-items:center"><div style="width:64px;height:64px;flex:none">${LOGO_SVG('s')}</div><div><h3 style="margin:0">CAPTR</h3><p style="margin:2px 0 0">Capture with intention.</p></div></div><dl class="kv"><dt>Privacy</dt><dd>Photos stay on this device. No account, no uploads, no tracking.</dd><dt>Originals</dt><dd>Never changed. Looks and edits are saved as settings.</dd><dt>RAW</dt><dd>Import DNG and ProRAW files to develop them. Shooting RAW needs the iPhone app.</dd></dl><div class="acts"><button class="btn ghost" onclick="document.getElementById('scrim').classList.remove('on')">Close</button></div>`)}
+})();
+let splashT0=null,splashDone=false;
+requestAnimationFrame(()=>requestAnimationFrame(()=>{splashT0=performance.now()}));
+function hideSplash(){if(splashDone)return;splashDone=true;const el=document.getElementById('splash');if(!el)return;
+  const MIN=(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?300:2300;
+  const go=()=>{if(splashT0===null){setTimeout(go,40);return}
+    setTimeout(()=>{document.body.classList.remove('booting');el.classList.add('hide');setTimeout(()=>el.remove(),900)},Math.max(0,MIN-(performance.now()-splashT0)))};go()}
+setTimeout(hideSplash,7000);
 /* ---------- lock page zoom ---------- */
 ['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
@@ -505,11 +550,45 @@ const DB=(()=>{
 })();
 
 /* ---------- recipe + looks ---------- */
+const PROFILES={
+  off:{dnL:0,dnC:0,dnRest:.3,dnShadow:0,crisp:0,clarity:0,defringe:0,chromaSnap:0,ltm:0,mids:0,blackP:0,awb:0},
+  natural:{dnL:.25,dnC:.5,dnRest:.5,dnShadow:.2,crisp:.2,clarity:.05,defringe:.4,chromaSnap:.3,ltm:.1,mids:0,blackP:.4,awb:.25},
+  balanced:{dnL:.5,dnC:.7,dnRest:.35,dnShadow:.35,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,ltm:.22,mids:0,blackP:.5,awb:.35},
+  lowlight:{dnL:.85,dnC:.95,dnRest:.3,dnShadow:.7,crisp:.35,clarity:.1,defringe:.6,chromaSnap:.6,ltm:.35,mids:.05,blackP:.8,awb:.4},
+  detail:{dnL:.35,dnC:.6,dnRest:.5,dnShadow:.25,crisp:.9,clarity:.35,defringe:.5,chromaSnap:.45,ltm:.15,mids:.05,blackP:.4,awb:.3}
+};
+const PROFILE_LIST=[['off','Off'],['natural','Natural'],['balanced','Balanced'],['lowlight','Low Light'],['detail','Detail']];
+const applyProfile=(rec,id)=>{Object.assign(rec,PROFILES[id]||PROFILES.balanced);rec.profile=id;return rec};
+/* ---------- image analysis: noise level + auto white balance ---------- */
+function analyzeImage(src){
+  const W=src.naturalWidth||src.width,H=src.naturalHeight||src.height;
+  const cs=Math.min(640,W,H),sx=Math.max(0,(W-cs)>>1),sy=Math.max(0,(H-cs)>>1);
+  const c=document.createElement('canvas');c.width=cs;c.height=cs;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(src,sx,sy,cs,cs,0,0,cs,cs);
+  const d=x.getImageData(0,0,cs,cs).data,Y=new Float32Array(cs*cs);
+  for(let i=0;i<cs*cs;i++)Y[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;
+  const lap=[],grad=[];
+  for(let yy=1;yy<cs-1;yy++)for(let xx=1;xx<cs-1;xx++){const i=yy*cs+xx;
+    const v=Y[i-cs-1]-2*Y[i-cs]+Y[i-cs+1]-2*Y[i-1]+4*Y[i]-2*Y[i+1]+Y[i+cs-1]-2*Y[i+cs]+Y[i+cs+1];
+    const gx=Y[i+1]-Y[i-1],gy=Y[i+cs]-Y[i-cs];lap.push(Math.abs(v));grad.push(gx*gx+gy*gy)}
+  const gs=Float32Array.from(grad).sort(),thr=gs[Math.floor(gs.length*.4)];
+  const flat=[];for(let i=0;i<lap.length;i++)if(grad[i]<=thr)flat.push(lap[i]);
+  flat.sort((a,b)=>a-b);const med=flat.length?flat[flat.length>>1]:0;
+  const sigma=Math.max(.0008,Math.min(.08,med/(0.6745*6)));
+  // auto white balance from near-neutral mid-tones
+  const k=Math.max(1,Math.floor(Math.max(W,H)/160)),sw=Math.max(8,Math.floor(W/k)),sh=Math.max(8,Math.floor(H/k));
+  const c2=document.createElement('canvas');c2.width=sw;c2.height=sh;const x2=c2.getContext('2d',{willReadFrequently:true});x2.drawImage(src,0,0,sw,sh);
+  const p=x2.getImageData(0,0,sw,sh).data;let sr=0,sg=0,sb=0,n=0;
+  for(let i=0;i<sw*sh;i++){const r=p[i*4]/255,g=p[i*4+1]/255,b=p[i*4+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),L=r*.2126+g*.7152+b*.0722;
+    if(L>.15&&L<.85&&mx>0&&(mx-mn)/mx<.14&&mx<.97){sr+=Math.pow(r,2.2);sg+=Math.pow(g,2.2);sb+=Math.pow(b,2.2);n++}}
+  let gains=[1,1,1];if(n>sw*sh*.04&&sr>0&&sb>0){const cl=v=>Math.max(.92,Math.min(1.08,v));gains=[cl(sg/sr),1,cl(sg/sb)]}
+  return{sigma,gains,w:W,h:H,neutralFrac:n/(sw*sh)};
+}
+const noiseLabel=s=>s<.004?'Low':s<.009?'Moderate':s<.016?'High':'Very high';
 const BANDS=['Red','Orange','Yellow','Green','Aqua','Blue','Purple','Magenta'];
 const BCOL=['#e5484d','#f08a24','#f2d12e','#46b45a','#2cc6c6','#3b6fe0','#8b5fd6','#d6479b'];
 const BHUE=[0,30,60,120,180,240,270,300];
 const hsl=o=>{const a=new Array(24).fill(0);for(const k in o){const i=BANDS.findIndex(b=>b.toLowerCase()===k);const [h,sa,l]=o[k];a[i]=h||0;a[8+i]=sa||0;a[16+i]=l||0}return a};
-const NEUTRAL={ev:0,contrast:0,highlights:0,shadows:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:0,split:0,sS:[.5,.5,.5],sH:[.5,.5,.5],pivot:.5,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,caFix:0,sharp:0,grain:0,grainSize:1,grainFmt:'s35',grainChroma:.35,grainRough:.5,grainPx:false,vig:0,hal:0,halRad:1,halThr:.7,tnShH:.55,tnShA:0,tnHiH:.08,tnHiA:0,tnBal:0,halTint:.35,flat:0,cin:0,hsl:new Array(24).fill(0)};
+const NEUTRAL={ev:0,contrast:0,highlights:0,shadows:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:0,split:0,sS:[.5,.5,.5],sH:[.5,.5,.5],pivot:.5,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,caFix:0,sharp:0,grain:0,grainSize:1,grainFmt:'s35',grainChroma:.35,grainRough:.5,grainPx:false,vig:0,hal:0,halRad:1,halThr:.7,tnShH:.55,tnShA:0,tnHiH:.08,tnHiA:0,tnBal:0,halTint:.35,flat:0,cin:0,dnL:.5,dnC:.7,dnRest:.35,dnShadow:.35,ltm:.22,mids:0,blackP:.5,awb:.35,profile:'balanced',hsl:new Array(24).fill(0)};
 const LOOKS=[
 {id:'neutral',name:'CAPTR Neutral',desc:'Balanced, natural, dependable baseline.',v:{}},
 {id:'golden',name:'Golden Hour',desc:'Warm highlights, gentle contrast, natural skin.',v:{temp:.22,tint:.03,contrast:.42,highlights:-.12,shadows:.12,vib:.18,sat:.04,split:.5,sS:[.5,.47,.45],sH:[.62,.54,.42],vig:.14}},
@@ -539,7 +618,7 @@ const S={ // app state
   customLooks:store.get('customLooks',[]),
   aspect:store.get('aspect','orig'),
   timer:0, camEv:0, grid:store.get('grid',false),
-  set:Object.assign({camGrain:'off',captureFmt:'jpeg',crispOn:true,zoomUnit:'apple',customGate:24,refMm:24,mute:false,grainAnim:true,previewQ:'high',haptics:true,hires:true,fullres:true,quality:.92,size:'full'},store.get('settings',{})),
+  set:Object.assign({engineOn:true,camGrain:'off',captureFmt:'jpeg',crispOn:true,zoomUnit:'apple',customGate:24,refMm:24,mute:false,grainAnim:true,previewQ:'high',haptics:true,hires:true,fullres:true,quality:.92,size:'full'},store.get('settings',{})),
   setTab:'general',clip:null, lib:[], filter:'all', sort:'new', view:'grid', selecting:false, picked:new Set(),
   urls:[]
 };
@@ -558,7 +637,7 @@ precision highp float;precision highp sampler2D;
 in vec2 vUv;out vec4 oc;
 uniform sampler2D uTex;uniform vec4 uCrop;uniform float uRot;uniform vec2 uOut;uniform float uSeed,uBypass;
 uniform float uEv,uCon,uPiv,uHi,uSh,uFade,uTemp,uTint,uSat,uVib,uMono,uSplit,uSharp,uGrain,uVig,uHal,uGSize,uGPx,uHRad,uHThr,uHLod,uGFrac,uGChroma,uGRough,uCrispOn,uCrisp,uClar,uDefr,uSnap,uCA,uCLod;
-uniform sampler2D uHalTex;uniform float uHLodMax,uHalTint;uniform vec3 uSS,uSH;uniform vec3 uHSL[8];uniform float uHslOn,uTnBal;uniform vec4 uTn;uniform float uFlat,uCin;
+uniform sampler2D uHalTex;uniform float uHLodMax,uHalTint;uniform vec3 uSS,uSH;uniform vec3 uHSL[8];uniform float uHslOn,uTnBal;uniform vec4 uTn;uniform float uFlat,uCin,uLtm,uLtmLod,uMids,uBlackP;uniform vec3 uGains;
 vec2 srcUV(vec2 uv){vec2 p=uCrop.xy+uv*uCrop.zw;
  if(uRot<.5)return p; if(uRot<1.5)return vec2(p.y,1.-p.x); if(uRot<2.5)return vec2(1.-p.x,1.-p.y); return vec2(1.-p.y,p.x);}
 vec3 tap(vec2 uv){return texture(uTex,srcUV(clamp(uv,0.,1.))).rgb;}
@@ -622,9 +701,9 @@ void main(){
   float Lbur=(4.*L0+2.*(Lt+Lb+Ll+Lr)+(Ltl+Ltr+Lbl+Lbr))/16.;
   float hp=L0-Lbur;
   float dL=hp*uCrisp*2.2*smoothstep(.003,.022,abs(hp));
-  float nL=clamp(L0+dL,Lmin-.015,Lmax+.015);
+  float nL=clamp(L0+dL,Lmin-.004,Lmax+.004);
   float add=nL-L0;
-  if(uClar>0.){add+=(L0-lum(tapL(vUv,uCLod)))*uClar*.7;}
+  if(uClar>0.){add+=(L0-lum(tapL(vUv,uCLod)))*uClar*.7*(1.-.88*edge);}
   c+=add;
  }
  if(uSharp>0.){vec3 b=(tap(vUv+vec2(px.x,0.))+tap(vUv-vec2(px.x,0.))+tap(vUv+vec2(0.,px.y))+tap(vUv-vec2(0.,px.y)))*.25;c+=(c-b)*uSharp*1.4;}
@@ -633,6 +712,7 @@ void main(){
  vec3 lin=pow(c,vec3(2.2))*exp2(uEv);
  lin*=vec3(1.+uTemp*.32,1.-uTint*.16,1.-uTemp*.32);
  lin*=vec3(1.+max(uTint,0.)*.05,1.,1.+max(uTint,0.)*.05);
+ lin*=uGains;
  if(uHal>0.){
   vec2 hu=vec2(vUv.x,1.-vUv.y);float rl=log2(max(uHRad,.05))+.4;
   vec2 ts=1./vec2(textureSize(uHalTex,0));
@@ -657,6 +737,13 @@ void main(){
   gx=mix(vec3(lum(gx)),gx,1./(1.+.22*sx*sx));
   g=mix(g,gx,uCin);
  }
+ if(uLtm>0.){
+  float Lb0=lum(tapL(vUv,uLtmLod));float Lb=pow(pow(Lb0,2.2)*exp2(uEv),1./2.2);float Lc=lum(g);
+  float ga=pow(clamp(.40/(Lb+.05),.62,1.7),uLtm*.6);
+  g*=mix(ga,1.,smoothstep(.02,.22,abs(Lc-Lb)));
+ }
+ if(uMids!=0.){float lm=lum(g);g*=1.+uMids*1.6*lm*(1.-lm);}
+ if(uBlackP>0.){float lb2=lum(g);g+=(1.-g)*uBlackP*.018*(1.-smoothstep(0.,.12,lb2));}
  float l=lum(g);
  float hm=smoothstep(.45,1.,l),sm=1.-smoothstep(0.,.55,l);
  g*=1.+uHi*.45*hm; g*=1.+uSh*.55*sm; g+=uSh*.06*sm*(1.-g);
@@ -744,13 +831,74 @@ void main(){
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     this.fbo=gl.createFramebuffer();this.hw=0;this.hh=0;
+    // ---- adaptive denoise program (edge-aware luma NLM + guided chroma) ----
+    const FS3=`#version 300 es
+precision highp float;out vec4 oc;
+uniform sampler2D uTex;uniform vec2 uSize;uniform float uSig,uL,uC,uRest,uShadow;
+float Yf(vec3 c){return dot(c,vec3(.299,.587,.114));}
+vec3 F(ivec2 p){return texelFetch(uTex,clamp(p,ivec2(0),ivec2(uSize)-ivec2(1)),0).rgb;}
+void main(){
+ ivec2 p=ivec2(gl_FragCoord.xy);vec3 c0=F(p);float y0=Yf(c0);
+ float s2=uSig*uSig;
+ float lam=(.6+uL*7.)*(1.+uShadow*(1.-smoothstep(.05,.5,y0))*1.5);
+ float yn=Yf(F(p+ivec2(0,-1))),ys=Yf(F(p+ivec2(0,1))),yw=Yf(F(p+ivec2(-1,0))),ye=Yf(F(p+ivec2(1,0)));
+ float acc=y0,ws=1.;
+ for(int j=-2;j<=2;j++)for(int i=-2;i<=2;i++){
+  if(i==0&&j==0)continue;ivec2 q=p+ivec2(i,j);
+  float yq=Yf(F(q));
+  float d0=y0-yq,d1=yn-Yf(F(q+ivec2(0,-1))),d2=ys-Yf(F(q+ivec2(0,1))),d3=yw-Yf(F(q+ivec2(-1,0))),d4=ye-Yf(F(q+ivec2(1,0)));
+  float d=(d0*d0+d1*d1+d2*d2+d3*d3+d4*d4)*.2;
+  float w=exp(-max(d-2.*s2,0.)/(lam*s2+1e-8));acc+=w*yq;ws+=w;}
+ for(int k=0;k<8;k++){float a=float(k)*.7854;ivec2 q=p+ivec2(int(round(cos(a)*4.)),int(round(sin(a)*4.)));
+  float yq=Yf(F(q));float d0=y0-yq,d1=yn-Yf(F(q+ivec2(0,-1))),d2=ys-Yf(F(q+ivec2(0,1))),d3=yw-Yf(F(q+ivec2(-1,0))),d4=ye-Yf(F(q+ivec2(1,0)));
+  float d=(d0*d0+d1*d1+d2*d2+d3*d3+d4*d4)*.2;float w=exp(-max(d-2.*s2,0.)/(lam*s2+1e-8));acc+=w*yq;ws+=w;}
+ float yd=acc/ws;
+ float res=y0-yd;float keep=uRest*smoothstep(1.2*uSig,3.5*uSig,abs(res));
+ float yo=yd+res*keep;
+ // chroma: wide bilateral guided by luma similarity
+ vec2 ch0=vec2(c0.r-y0,c0.b-y0);vec2 ca=ch0;float cw=1.;
+ float hy=.05+3.*uSig;
+ for(int j=-3;j<=3;j++)for(int i=-3;i<=3;i++){
+  if(i==0&&j==0)continue;vec3 cq=F(p+ivec2(i,j)*2);float yq=Yf(cq);
+  float dy=(yq-y0)/hy;vec2 cc=vec2(cq.r-yq,cq.b-yq);vec2 dc=(cc-ch0);
+  float w=exp(-dy*dy-dot(dc,dc)/(.01+36.*s2+.002));ca+=w*cc;cw+=w;}
+ vec2 chd=ca/cw;vec2 cho=mix(ch0,chd,uC);
+ float r=yo+cho.x,b=yo+cho.y,g=(yo-.299*r-.114*b)/.587;
+ oc=vec4(clamp(vec3(r,g,b),0.,1.),1.);
+}`;
+    const prD=this.prD=gl.createProgram();gl.attachShader(prD,mk(gl.VERTEX_SHADER,VS));gl.attachShader(prD,mk(gl.FRAGMENT_SHADER,FS3));gl.bindAttribLocation(prD,a,'p');gl.linkProgram(prD);
+    if(!gl.getProgramParameter(prD,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prD));
+    this.UD={};for(const n of ['uTex','uSize','uSig','uL','uC','uRest','uShadow'])this.UD[n]=gl.getUniformLocation(prD,n);
+    this.dnTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.dnTex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    this.fboD=gl.createFramebuffer();this.dnW=0;this.dnH=0;this.dnKey='';this.srcId=0;
     this.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.tex);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-    this.U={};for(const n of ['uTex','uCrop','uRot','uOut','uSeed','uBypass','uEv','uCon','uPiv','uHi','uSh','uFade','uTemp','uTint','uSat','uVib','uMono','uSplit','uSharp','uGrain','uVig','uHal','uSS','uSH','uGSize','uGPx','uHRad','uHThr','uHLod','uGFrac','uGChroma','uGRough','uCrispOn','uCrisp','uClar','uDefr','uSnap','uCA','uCLod','uHSL[0]','uHslOn','uTn','uTnBal','uHalTex','uHLodMax','uHalTint','uFlat','uCin'])this.U[n]=gl.getUniformLocation(pr,n);
+    this.U={};for(const n of ['uTex','uCrop','uRot','uOut','uSeed','uBypass','uEv','uCon','uPiv','uHi','uSh','uFade','uTemp','uTint','uSat','uVib','uMono','uSplit','uSharp','uGrain','uVig','uHal','uSS','uSH','uGSize','uGPx','uHRad','uHThr','uHLod','uGFrac','uGChroma','uGRough','uCrispOn','uCrisp','uClar','uDefr','uSnap','uCA','uCLod','uHSL[0]','uHslOn','uTn','uTnBal','uHalTex','uHLodMax','uHalTint','uFlat','uCin','uLtm','uLtmLod','uMids','uBlackP','uGains'])this.U[n]=gl.getUniformLocation(pr,n);
     this.maxTex=gl.getParameter(gl.MAX_TEXTURE_SIZE);this.sw=0;this.sh=0;
   }
-  setSource(src,w,h){const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);gl.generateMipmap(gl.TEXTURE_2D);this.sw=w;this.sh=h}
+  setSource(src,w,h){this.srcId=(this.srcId||0)+1;this.dnKey='';const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);gl.generateMipmap(gl.TEXTURE_2D);this.sw=w;this.sh=h}
+  denoise(r){
+    const gl=this.gl,w=this.sw,h=this.sh;
+    const key=[this.srcId,w,h,r.dnL,r.dnC,r.dnRest,r.dnShadow,r._sigma].map(v=>typeof v==='number'?v.toFixed(5):v).join('|');
+    if(key===this.dnKey)return true;
+    try{
+      gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,this.dnTex);
+      if(this.dnW!==w||this.dnH!==h){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);this.dnW=w;this.dnH=h;
+        gl.bindFramebuffer(gl.FRAMEBUFFER,this.fboD);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,this.dnTex,0)}
+      gl.bindFramebuffer(gl.FRAMEBUFFER,this.fboD);
+      if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){gl.bindFramebuffer(gl.FRAMEBUFFER,null);return false}
+      gl.bindTexture(gl.TEXTURE_2D,this.tex);
+      gl.viewport(0,0,w,h);gl.useProgram(this.prD);const U=this.UD;
+      gl.uniform1i(U.uTex,0);gl.uniform2f(U.uSize,w,h);gl.uniform1f(U.uSig,Math.max(r._sigma,1e-4));gl.uniform1f(U.uL,r.dnL||0);gl.uniform1f(U.uC,r.dnC||0);gl.uniform1f(U.uRest,r.dnRest??.35);gl.uniform1f(U.uShadow,r.dnShadow??0);
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+      gl.bindTexture(gl.TEXTURE_2D,this.dnTex);gl.generateMipmap(gl.TEXTURE_2D);
+      this.dnKey=key;return true;
+    }catch(e){gl.bindFramebuffer(gl.FRAMEBUFFER,null);return false}
+  }
   halPass(r,cr,ow,oh){
     const gl=this.gl,U2=this.U2;
     const hw=Math.max(64,Math.round(ow/3)),hh=Math.max(64,Math.round(oh/3));
@@ -772,11 +920,15 @@ void main(){
     if(this.c.width!==ow||this.c.height!==oh){this.c.width=ow;this.c.height=oh}
     gl.viewport(0,0,ow,oh);
     const cr=cropFor(r.aspect,r.rot||0,this.sw,this.sh,r.zoom||1);
+    const engOn=!(typeof S!=='undefined'&&S.set.engineOn===false);
+    let srcTex=this.tex;
+    if(engOn&&!bypass&&(r._sigma||0)>0&&((r.dnL||0)>0||(r.dnC||0)>0)&&this.denoise(r))srcTex=this.dnTex;
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,srcTex);
     const halOn=!bypass&&(r.hal||0)>0;if(halOn)this.halPass(r,cr,ow,oh);
     gl.useProgram(this.pr);gl.viewport(0,0,ow,oh);
     gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,this.halTex);gl.activeTexture(gl.TEXTURE0);gl.uniform1i(U.uHalTex,1);gl.uniform1f(U.uHLodMax,this.hlod||4);gl.uniform1f(U.uHalTint,r.halTint??.35);
     const lod=Math.max(0,Math.log2(Math.max(1,.03*(r.halRad??1)*cr.ph/3)));
-    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.uniform1i(U.uTex,0);gl.uniform4f(U.uCrop,cr.ox,cr.oy,cr.cx,cr.cy);gl.uniform1f(U.uRot,r.rot||0);gl.uniform2f(U.uOut,ow,oh);gl.uniform1f(U.uSeed,seed);gl.uniform1f(U.uBypass,bypass?1:0);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,srcTex);gl.uniform1i(U.uTex,0);gl.uniform4f(U.uCrop,cr.ox,cr.oy,cr.cx,cr.cy);gl.uniform1f(U.uRot,r.rot||0);gl.uniform2f(U.uOut,ow,oh);gl.uniform1f(U.uSeed,seed);gl.uniform1f(U.uBypass,bypass?1:0);
     gl.uniform1f(U.uEv,r.ev);gl.uniform1f(U.uCon,r.contrast);gl.uniform1f(U.uPiv,r.pivot??.5);gl.uniform1f(U.uHi,r.highlights);gl.uniform1f(U.uSh,r.shadows);gl.uniform1f(U.uFade,r.fade);
     gl.uniform1f(U.uTemp,r.temp);gl.uniform1f(U.uTint,r.tint);gl.uniform1f(U.uSat,r.sat);gl.uniform1f(U.uVib,r.vib);gl.uniform1f(U.uMono,r.mono);gl.uniform1f(U.uSplit,r.split);
     gl.uniform1f(U.uSharp,r.sharp);gl.uniform1f(U.uGrain,r.grain);gl.uniform1f(U.uVig,r.vig);gl.uniform1f(U.uHal,halOn?r.hal:0);
@@ -787,6 +939,8 @@ void main(){
     {const hs=r.hsl||[],pk=new Float32Array(24);let any=0;for(let i=0;i<8;i++){pk[i*3]=hs[i]||0;pk[i*3+1]=hs[8+i]||0;pk[i*3+2]=hs[16+i]||0;if(pk[i*3]||pk[i*3+1]||pk[i*3+2])any=1}
       gl.uniform3fv(U['uHSL[0]'],pk);gl.uniform1f(U.uHslOn,any);gl.uniform4f(U.uTn,r.tnShH??.55,r.tnShA??0,r.tnHiH??.08,r.tnHiA??0);gl.uniform1f(U.uTnBal,r.tnBal??0)}
     gl.uniform1f(U.uFlat,r.flat??0);gl.uniform1f(U.uCin,r.cin??0);
+    {const aw=engOn?(r.awb??0):0,g3=r._gains||[1,1,1];gl.uniform3f(U.uGains,1+(g3[0]-1)*aw,1+(g3[1]-1)*aw,1+(g3[2]-1)*aw)}
+    gl.uniform1f(U.uLtm,engOn?(r.ltm??0):0);gl.uniform1f(U.uLtmLod,Math.log2(Math.max(2,.05*cr.ph)));gl.uniform1f(U.uMids,engOn?(r.mids??0):0);gl.uniform1f(U.uBlackP,engOn?(r.blackP??0):0);
     gl.uniform3fv(U.uSS,r.sS);gl.uniform3fv(U.uSH,r.sH);
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
     return cr;
@@ -1143,9 +1297,10 @@ async function capture(){
 async function saveBlob(blob,o){
   const {img,url}=await loadImage(blob);
   const w=img.naturalWidth,h=img.naturalHeight;
+  let an=null;try{an=analyzeImage(img);if(o.recipe&&o.recipe.profile==='balanced'&&an.sigma>=.012)applyProfile(o.recipe,'lowlight')}catch{}
   let thumb=null;try{thumb=await makeThumb(img,o.recipe)}catch{}
   URL.revokeObjectURL(url);
-  const meta={id:uid(),date:o.date||Date.now(),w,h,size:blob.size,format:o.format,lens:o.lens||'',facing:o.facing||'',fav:false,edited:false,exported:false,recipe:o.recipe,base:JSON.stringify(o.recipe),thumb,...(o.extra||{})};
+  const meta={an:an?{sigma:an.sigma,gains:an.gains,w:an.w,h:an.h}:undefined,id:uid(),date:o.date||Date.now(),w,h,size:blob.size,format:o.format,lens:o.lens||'',facing:o.facing||'',fav:false,edited:false,exported:false,recipe:o.recipe,base:JSON.stringify(o.recipe),thumb,...(o.extra||{})};
   await DB.put('orig',{id:meta.id,blob});await DB.put('meta',meta);
   meta.thumbUrl=URL.createObjectURL(thumb||blob);S.lib.push(meta);renderLibrary();return meta;
 }
@@ -1459,7 +1614,8 @@ async function renderPhotoBlob(id,opts){
     const cap=Math.min(R.maxTex,8192);
     if(Math.max(sw,sh)>cap){src=scaledCanvas(img,cap);sw=src.width;sh=src.height;note='Very large photo was scaled to fit your device.'}
     R.setSource(src,sw,sh);
-    const rec=p.recipe,cr=cropFor(rec.aspect,rec.rot||0,sw,sh,rec.zoom||1);
+    const an0=(()=>{try{return analyzeImage(img)}catch{return null}})();
+    const rec=an0?Object.assign({},p.recipe,{_sigma:an0.sigma*(sw/an0.w),_gains:an0.gains}):p.recipe,cr=cropFor(rec.aspect,rec.rot||0,sw,sh,rec.zoom||1);
     const native=Math.max(cr.pw,cr.ph),long=opts.size==='full'?native:Math.min(native,+opts.size);
     let [w,h]=fitSize(cr.r,long);const px=w*h;if(px>16e6){const k=Math.sqrt(16e6/px);w*=k;h*=k;note='Exported at 16 MP, the most iPhone Safari can encode.'}
     R.render(rec,w,h,false,3);const blob=await glBlob(R,opts.quality);R.c.width=R.c.height=1;
@@ -1573,6 +1729,7 @@ const CONTROLS={
   wb:[['temp','Temperature',-1,1,.01],['tint','Tint',-1,1,.01]],
   sat:[['sat','Saturation',-1,1,.01],['vib','Vibrance',-1,1,.01],['mono','Black & White',0,1,.01]],
   split:[['tnShH','Shadow Hue',0,1,.002],['tnShA','Shadow Amount',0,1,.01],['tnHiH','Highlight Hue',0,1,.002],['tnHiA','Highlight Amount',0,1,.01],['tnBal','Balance',-1,1,.01]],
+  engine:[['dnL','Noise Reduction',0,1,.01],['dnC','Color Noise',0,1,.01],['dnRest','Keep Texture',0,1,.01],['dnShadow','Shadow Denoise',0,1,.01],['crisp','Detail',0,1.5,.01],['clarity','Micro-contrast',0,1,.01],['ltm','Local Tone',0,1,.01],['mids','Midtones',-1,1,.01],['blackP','Protect Blacks',0,1,.01],['awb','Auto White Balance',0,1,.01]],
   grain:[['grain','Amplitude',0,2.5,.01],['grainSize','Grain Size',.5,3,.01],['grainRough','Roughness',0,1,.01],['grainChroma','Color Grain',0,1,.01]],
   halation:[['hal','Amount',0,1.5,.01],['halRad','Radius',.3,3,.01],['halThr','Threshold',.4,.95,.01],['halTint','Color',0,1,.01]],
   crisp:[['crisp','Crisp Detail',0,1.5,.01],['clarity','Clarity',0,1,.01],['defringe','Defringe',0,1,.01],['chromaSnap','Chroma Edge Snap',0,1,.01],['caFix','Lateral CA',-1,1,.01]],
@@ -1586,13 +1743,14 @@ const edCanvas=$('#edCanvas');
 const clone=o=>JSON.parse(JSON.stringify(o));
 async function openEditor(id){
   const p=S.lib.find(x=>x.id===id);if(!p)return;
-  E.p=p;E.rec=Object.assign({flat:0,cin:0,halTint:.35,hsl:new Array(24).fill(0),tnShH:.55,tnShA:0,tnHiH:.08,tnHiA:0,tnBal:0,zoom:1,pivot:.5,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,caFix:0,grainSize:1,grainFmt:'s35',grainChroma:.35,grainRough:.5,grainPx:false,halRad:1,halThr:.7},clone(p.recipe));E.undo=[];E.redo=[];E.bypass=false;E.panel='looks';
+  E.p=p;E.rec=Object.assign({dnL:0,dnC:0,dnRest:.35,dnShadow:0,ltm:0,mids:0,blackP:0,awb:0,profile:'off',flat:0,cin:0,halTint:.35,hsl:new Array(24).fill(0),tnShH:.55,tnShA:0,tnHiH:.08,tnHiA:0,tnBal:0,zoom:1,pivot:.5,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,caFix:0,grainSize:1,grainFmt:'s35',grainChroma:.35,grainRough:.5,grainPx:false,halRad:1,halThr:.7},clone(p.recipe));E.undo=[];E.redo=[];E.bypass=false;E.panel='looks';
   $('#editor').classList.add('on');$('#e-spin').style.display='grid';$('#e-spin').textContent='Developing…';E.open=true;E.video=null;$('#e-transport').hidden=true;$('#e-trim').hidden=true;
   try{
     if(!E.R)E.R=new Renderer(edCanvas);
     const o=await DB.get('orig',id);
     if(p.type==='video'){await openVideo(o.blob)}else{
     const {img,url}=await loadImage(o.blob);E.img=img;E.url=url;
+    try{E.an=p.an||analyzeImage(img);if(!p.an)p.an={sigma:E.an.sigma,gains:E.an.gains,w:E.an.w,h:E.an.h}}catch{E.an=null}
     E.prev=scaledCanvas(img,Math.min(2048,E.R.maxTex));E.R.setSource(E.prev,E.prev.width,E.prev.height);
     E.look=null;edRender();$('#e-spin').style.display='none';renderEdUI();}
   }catch(e){closeEditor();toast('Couldn’t open this photo')}
@@ -1638,7 +1796,8 @@ function edRender(){
   const SW=stage.clientWidth,SH=stage.clientHeight;let cw=SW,ch=SW/cr.r;if(ch>SH){ch=SH;cw=SH*cr.r}
   cw=Math.max(1,Math.floor(cw));ch=Math.max(1,Math.floor(ch));edCanvas.style.width=cw+'px';edCanvas.style.height=ch+'px';
   const k=Math.min(1,2048/Math.max(cw*dpr,ch*dpr));
-  E.R.render(E.rec,cw*dpr*k,ch*dpr*k,E.bypass,E.video?(Math.floor(E.video.currentTime*24)%1000):3);
+  const rr=(E.an&&E.rec.dnL!==undefined)?Object.assign({},E.rec,{_sigma:E.an.sigma*(E.prev.width/E.an.w),_gains:E.an.gains}):E.rec;
+  E.R.render(rr,cw*dpr*k,ch*dpr*k,E.bypass,E.video?(Math.floor(E.video.currentTime*24)%1000):3);
   $('#e-tag').classList.toggle('on',E.bypass);
 }
 const sched=()=>{if(!E.raf)E.raf=requestAnimationFrame(()=>{E.raf=0;edRender()})};
@@ -1681,8 +1840,8 @@ $('#e-savelook').onclick=async()=>{
   const l={id:'u'+uid(),name,desc:'Custom look',v,custom:true};S.customLooks.push(l);store.set('customLooks',S.customLooks);
   E.lastCommit=clone(E.rec);E.rec.look=l.id;commit();renderEdUI();renderLooks();toast('Look saved');
 };
-(()=>{const t=$('#e-tabs');[['looks','looks','Looks'],['tone','tone','Tone'],['color','palette','Color'],['hsl','drop','HSL'],['texture','texture','Texture'],['crop','crop','Crop']].forEach(([p,i,l])=>{const b=document.createElement('button');b.className='t';b.setAttribute('role','tab');b.dataset.p=p;b.innerHTML=ic(i,24)+'<span>'+l+'</span>';b.onclick=()=>{E.panel=p;renderEdUI()};t.appendChild(b)});
-  const f=document.createElement('button');f.className='fab';f.id='e-export';f.setAttribute('aria-label','Export');t.appendChild(f);
+(()=>{const t0=$('#e-tabs');const t=document.createElement('div');t.className='tabscroll';t0.appendChild(t);[['looks','looks','Looks'],['engine','engine','Engine'],['tone','tone','Tone'],['color','palette','Color'],['hsl','drop','HSL'],['texture','texture','Texture'],['crop','crop','Crop']].forEach(([p,i,l])=>{const b=document.createElement('button');b.className='t';b.setAttribute('role','tab');b.dataset.p=p;b.innerHTML=ic(i,24)+'<span>'+l+'</span>';b.onclick=()=>{E.panel=p;renderEdUI()};t.appendChild(b)});
+  const f=document.createElement('button');f.className='fab';f.id='e-export';f.setAttribute('aria-label','Export');t0.appendChild(f);
   f.onclick=async()=>{await flushSave();if(E.video)videoExportSheet(E.p.id);else exportSheet([E.p.id])}})();
 function fmtVal(k,v){if(HUEKEYS.includes(k))return Math.round(v*360)+'°';if(k==='ev')return(v>=0?'+':'')+v.toFixed(2);if(TWO.includes(k))return v.toFixed(2);const n=Math.round(v*100);return(n>0&&['highlights','shadows','temp','tint','sat','vib'].includes(k)?'+':'')+n}
 function addSlider(pn,k,label,mn,mx,st,base){
@@ -1697,7 +1856,8 @@ function addSlider(pn,k,label,mn,mx,st,base){
   pn.appendChild(w);
 }
 const GRAIN_KEYS=['grain','grainSize','grainFmt','grainChroma','grainRough','grainPx'];
-const keepSet=r=>{const k={aspect:r.aspect,rot:r.rot,zoom:r.zoom};for(const g of GRAIN_KEYS)if(r[g]!==undefined)k[g]=r[g];return k};
+const ENGINE_KEEP=['dnL','dnC','dnRest','dnShadow','ltm','mids','blackP','awb','defringe','chromaSnap','profile'];
+const keepSet=r=>{const k={aspect:r.aspect,rot:r.rot,zoom:r.zoom};for(const g of GRAIN_KEYS.concat(ENGINE_KEEP))if(r[g]!==undefined)k[g]=r[g];return k};
 function addArrSlider(pn,idx,label,kind,base){
   const w=document.createElement('div');w.className='sl';
   w.innerHTML=`<div class="lab"><button>${label}</button><span class="v"></span></div><input type="range" min="-1" max="1" step="0.01" aria-label="${label}">`;
@@ -1727,6 +1887,19 @@ function renderHslPanel(pn){
     const b=document.createElement('button');b.className='chip';b.textContent=l;b.onclick=()=>{E.lastCommit=clone(E.rec);fn();commit();edRender();renderEdUI();haptic(6)};bar.appendChild(b)});
   pn.appendChild(bar);
 }
+function renderEnginePanel(pn){
+  const an=E.an,base=lookValues(E.rec.look);
+  const info=document.createElement('div');info.style.cssText='padding:10px 2px 4px;color:var(--mute);font-size:13px;line-height:1.4';
+  const sug=an?(an.sigma>=.012?'lowlight':an.sigma<.004?'natural':'balanced'):'balanced';
+  info.innerHTML=an?`<b style="color:var(--tx);font-weight:500">Noise level: ${noiseLabel(an.sigma)}</b> (${(an.sigma*100).toFixed(2)}%) · suggested: ${PROFILE_LIST.find(p=>p[0]===sug)[1]}`:'Measuring this photo…';
+  pn.appendChild(info);
+  const row=document.createElement('div');row.className='pills';row.style.cssText='flex-wrap:nowrap;overflow-x:auto;padding:6px 0 4px';
+  PROFILE_LIST.forEach(([id,l])=>{const b=document.createElement('button');b.className='chip'+((E.rec.profile||'')===id?' on':'');b.style.flex='none';b.textContent=l+(id===sug&&id!=='off'?' ★':'');
+    b.onclick=()=>{E.lastCommit=clone(E.rec);applyProfile(E.rec,id);commit();edRender();renderEdUI();haptic(8)};row.appendChild(b)});
+  pn.appendChild(row);
+  CONTROLS.engine.forEach(([k,label,mn,mx,st])=>addSlider(pn,k,label,mn,mx,st,base));
+  const n=document.createElement('p');n.style.cssText='color:var(--mute);font-size:12px;margin:6px 0 2px';n.textContent='The engine reduces noise and sharpens edges from what the camera captured. It can’t recover detail that was never recorded.';pn.appendChild(n);
+}
 function renderEdUI(){
   updateEdBtns();
   $$('#e-tabs button.t').forEach(b=>b.setAttribute('aria-selected',b.dataset.p===E.panel));
@@ -1738,6 +1911,7 @@ function renderEdUI(){
       try{const R=getThumbR();const src=scaledCanvas(E.prev,260);R.setSource(src,src.width,src.height);const rec=Object.assign(newRecipe(l.id),{aspect:'1:1',rot:E.rec.rot});R.render(rec,172,172,false,3);c.getContext('2d').drawImage(R.c,0,0)}catch{}
       d.onclick=()=>{E.lastCommit=clone(E.rec);const keep=keepSet(E.rec);E.rec=newRecipe(l.id,keep);commit();edRender();renderEdUI();haptic(8)};
     });
+  }else if(E.panel==='engine'){renderEnginePanel(pn);
   }else if(E.panel==='hsl'){renderHslPanel(pn);
   }else if(E.panel==='crop'){
     pn.innerHTML=`<div class="pills" id="cr-a" style="flex-wrap:nowrap;overflow-x:auto"></div><div class="sl"><div class="lab"><button>Punch-in zoom</button><span class="v"></span></div><input type="range" min="1" max="4" step="0.01" aria-label="Punch-in zoom"></div><div class="pills" id="cr-z"></div><div class="pills"><button class="chip" id="cr-rot">${ic('rotate',16)}Rotate 90°</button></div><p style="color:var(--mute);font-size:12.5px;margin:2px 0">Crops are non-destructive. The original keeps its full frame and is never stretched.</p>`;
@@ -1847,6 +2021,7 @@ function renderSettings(){
   }else if(S.setTab==='processing'){
     b.innerHTML=`
     <div class="sec-h">Live preview</div><div class="set">
+      ${sw('engineOn','Smart Engine','Noise reduction, local tone, auto white balance and black protection. Turn off to see only your manual edits.')}
       ${sw('crispOn','Crisp Engine','Edge-aware sharpening, fringe and chromatic aberration cleanup, chroma edge snap. Turn off to see the untouched camera image.')}
       ${sw('grainAnim','Animate grain at 24 fps','Grain changes every frame like film. Turn off for a frozen grain pattern.')}
       <div class="row"><span class="l">Preview quality<small>Standard is lighter on battery and heat.</small></span><select id="pq"><option value="high">High</option><option value="std">Standard</option></select></div>
@@ -1898,12 +2073,12 @@ addEventListener('keydown',e=>{if(e.code==='Space'&&S.tab==='camera'&&!E.open&&!
   updateCamUI();renderLooks();
   await loadLibrary();
   requestAnimationFrame(camLoop);
-  if(cam.noGL){setGate('nogl');return}
+  if(cam.noGL){setGate('nogl');hideSplash();return}
   let granted=false;
   try{if(navigator.permissions&&navigator.permissions.query){const r=await navigator.permissions.query({name:'camera'});granted=r.state==='granted'}}catch{}
-  if(granted||store.get('onboarded',false))startCamera();else setGate('intro');
+  if(granted||store.get('onboarded',false)){hideSplash();startCamera()}else{setGate('intro');hideSplash()}
 })();
-window.__camy={S,cam,E};
+window.__camy={S,cam,E,Renderer,newRecipe,analyzeImage,cropFor,PROFILES,applyProfile,NEUTRAL};
 })();
 </script>
 </body>
