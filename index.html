@@ -46,7 +46,18 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .gridov{position:absolute;inset:0;pointer-events:none;display:none;background:
  linear-gradient(to right,transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px)),
  linear-gradient(to bottom,transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
-.gridov.on{display:block}
+.gridov.on{display:none!important}
+.guide-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.guide-ov .gd{fill:none;stroke:#fff;stroke-opacity:.92;stroke-width:2.6;stroke-dasharray:15 11;stroke-linecap:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.guide-ov .gs{fill:none;stroke:#fff;stroke-opacity:.5;stroke-width:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.guide-ov .gk{fill:#fff;fill-opacity:.9}
+.guide-lab{position:absolute;left:0;right:0;top:11%;text-align:center;pointer-events:none;color:#fff;font-family:var(--mono);opacity:0;transition:opacity .35s;text-shadow:0 1px 6px rgba(0,0,0,.55)}
+.guide-lab.show{opacity:1}.guide-lab b{display:block;font-size:15px;letter-spacing:.28em;text-transform:uppercase;font-weight:600}.guide-lab small{display:block;margin-top:14px;font-size:12px;letter-spacing:.04em;opacity:.7;font-family:inherit}
+.gpills{position:absolute;left:0;right:0;bottom:8px;display:none;gap:8px;overflow-x:auto;padding:6px 12px;scrollbar-width:none;z-index:5}.gpills::-webkit-scrollbar{display:none}.gpills.on{display:flex}
+.gpills button{flex:none;font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.82);background:rgba(28,26,26,.62);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.gpills button.on{color:#cfe0ff;border-color:rgba(160,190,255,.7);background:rgba(24,28,40,.78)}
+.lk-bar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:40;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:18px;background:rgba(22,22,28,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.lookcard.sel{outline:2px solid var(--acc);outline-offset:-2px}.lookcard .pick{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.55);flex:none;display:grid;place-items:center;color:#1a1205}.lookcard.sel .pick{background:var(--acc);border-color:var(--acc)}
 .reticle{position:absolute;width:74px;height:74px;margin:-37px 0 0 -37px;border:1.5px solid var(--acc);border-radius:6px;pointer-events:none;opacity:0;transform:scale(1.25)}
 .reticle.show{opacity:1;transform:scale(1);transition:transform .18s,opacity .2s}
 .reticle.fade{opacity:0;transition:opacity .6s .8s}
@@ -114,6 +125,7 @@ input[type=range]::-moz-range-thumb{width:46px;height:30px;border-radius:15px;ba
 .empty h3{color:var(--tx);font-weight:300;font-size:20px;margin:0}
 .actionbar{display:none;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--s1);justify-content:space-around}
 .selecting+.actionbar{display:flex}
+.actionbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:40;border:1px solid var(--line);border-radius:18px;background:rgba(22,22,28,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 30px rgba(0,0,0,.45);align-items:center}.actionbar{gap:6px;padding:8px 10px;overflow-x:auto;scrollbar-width:none}.actionbar::-webkit-scrollbar{display:none}.actionbar .chip{flex:none;padding:0 11px;min-height:38px;font-size:13px;gap:5px}.actionbar span{white-space:nowrap;font-size:12px!important}
 .looklist{padding:0 12px 20px;display:grid;gap:10px}
 .lookcard{display:flex;gap:12px;background:var(--s1);border-radius:var(--r);padding:10px;align-items:center;border:1px solid transparent;text-align:left;width:100%}
 .lookcard.active{border-color:var(--acc)}
@@ -321,6 +333,7 @@ body.booting #app>:not(#splash){visibility:hidden}
       <div class="finder" id="finder">
         <canvas id="camCanvas" aria-label="Live viewfinder"></canvas>
         <div class="gridov" id="gridov"></div>
+        <svg class="guide-ov" id="guide-ov" aria-hidden="true"></svg><div class="guide-lab" id="guide-lab"><b></b><small>Tap again to flip</small></div><div class="gpills" id="gpills" role="group" aria-label="Composition guides"></div>
         <div class="reticle" id="reticle"></div>
         <div class="countdown" id="countdown" aria-live="assertive"></div>
         <div class="blink" id="blink"></div>
@@ -364,7 +377,7 @@ body.booting #app>:not(#splash){visibility:hidden}
   <section class="screen" id="s-looks" aria-label="Looks">
     <div class="page-h"><div><h2>Looks</h2><small>Rendering profiles. The active look is used live on camera.</small></div></div>
     <div class="scroll"><div class="sec-h">Built-in</div><div class="looklist" id="look-built"></div>
-    <div class="sec-h" id="custom-h">Your looks</div><div class="looklist" id="look-custom"></div></div>
+    <div class="sec-h" id="custom-h" style="display:flex;align-items:center;justify-content:space-between"><span>Your looks</span><button class="chip" id="lk-rm" style="flex:none">Remove…</button></div><div class="looklist" id="look-custom"></div></div>
   </section>
 
   <!-- SETTINGS -->
@@ -389,6 +402,7 @@ body.booting #app>:not(#splash){visibility:hidden}
       <button class="ib" id="e-redo" aria-label="Redo"></button>
       <div class="sp"></div>
       <button class="ib" id="e-fav" aria-label="Favorite" aria-pressed="false"></button>
+      <button class="ib" id="e-trash" aria-label="Delete photo"></button>
       <button class="ib" id="e-info" aria-label="Photo info"></button>
     </div>
     <div class="ed-stage" id="e-stage">
@@ -562,10 +576,11 @@ const PROFILE_LIST=[['off','Off'],['natural','Natural'],['balanced','Balanced'],
 const applyProfile=(rec,id)=>{Object.assign(rec,PROFILES[id]||PROFILES.balanced);rec.profile=id;return rec};
 /* ---------- image analysis: noise level + auto white balance ---------- */
 function imgFeatures(p,n){
-  const Ls=new Float32Array(n);let sat=0,rbS=0,rbN=0;
-  for(let i=0;i<n;i++){const r=p[i*4]/255,g=p[i*4+1]/255,b=p[i*4+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),L=r*.2126+g*.7152+b*.0722;Ls[i]=L;sat+=mx>0?(mx-mn)/mx:0;if(L>.2&&L<.7){rbS+=r-b;rbN++}}
+  const Ls=new Float32Array(n);let sat=0,rbS=0,rbN=0,sk=0;
+  for(let i=0;i<n;i++){const r=p[i*4]/255,g=p[i*4+1]/255,b=p[i*4+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),L=r*.2126+g*.7152+b*.0722;Ls[i]=L;const sa=mx>0?(mx-mn)/mx:0;sat+=sa;if(L>.2&&L<.7){rbS+=r-b;rbN++}
+    if(mx===r&&sa>.15&&sa<.6&&L>.2&&L<.92&&g>=b){const h=60*((g-b)/(mx-mn+1e-9));if(h>8&&h<45)sk++}}
   const s=Float32Array.from(Ls).sort(),q=x=>s[Math.min(n-1,Math.floor(n*x))];
-  return{p5:+q(.05).toFixed(3),p50:+q(.5).toFixed(3),p95:+q(.95).toFixed(3),sat:+(sat/n).toFixed(3),rb:rbN>20?+(rbS/rbN).toFixed(3):0};
+  return{p5:+q(.05).toFixed(3),p50:+q(.5).toFixed(3),p95:+q(.95).toFixed(3),sat:+(sat/n).toFixed(3),rb:rbN>20?+(rbS/rbN).toFixed(3):0,skin:+(sk/n).toFixed(3)};
 }
 function analyzeImage(src){
   const W=src.naturalWidth||src.width,H=src.naturalHeight||src.height;
@@ -596,11 +611,11 @@ const BANDS=['Red','Orange','Yellow','Green','Aqua','Blue','Purple','Magenta'];
 const BCOL=['#e5484d','#f08a24','#f2d12e','#46b45a','#2cc6c6','#3b6fe0','#8b5fd6','#d6479b'];
 const BHUE=[0,30,60,120,180,240,270,300];
 const hsl=o=>{const a=new Array(24).fill(0);for(const k in o){const i=BANDS.findIndex(b=>b.toLowerCase()===k);const [h,sa,l]=o[k];a[i]=h||0;a[8+i]=sa||0;a[16+i]=l||0}return a};
-const NEUTRAL={ev:0,contrast:0,highlights:0,shadows:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:0,split:0,sS:[.5,.5,.5],sH:[.5,.5,.5],pivot:.5,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,caFix:0,sharp:0,grain:0,grainSize:1,grainFmt:'s35',grainChroma:.35,grainRough:.5,grainPx:false,vig:0,hal:0,halRad:1,halThr:.7,tnShH:.55,tnShA:0,tnHiH:.08,tnHiA:0,tnBal:0,halTint:.35,flat:0,cin:0,dnL:.5,dnC:.7,dnRest:.35,dnShadow:.35,ltm:.22,mids:0,blackP:.5,awb:.35,profile:'balanced',hsl:new Array(24).fill(0)};
+const NEUTRAL={ev:0,contrast:0,highlights:0,shadows:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:0,split:0,sS:[.5,.5,.5],sH:[.5,.5,.5],pivot:.5,crisp:.45,clarity:.15,defringe:.5,chromaSnap:.5,caFix:0,sharp:0,grain:0,grainSize:1,grainFmt:'s35',grainChroma:.35,grainRough:.5,grainPx:false,vig:0,hal:0,halRad:1,halThr:.7,tnShH:.55,tnShA:0,tnHiH:.08,tnHiA:0,tnBal:0,halTint:.35,flat:0,cin:0,dnL:.5,dnC:.7,dnRest:.35,dnShadow:.35,ltm:.22,mids:0,blackP:.5,awb:.35,skin:.7,profile:'balanced',hsl:new Array(24).fill(0)};
 /* ---------- Auto look: scene-adaptive grade learned from before/after reference pairs ---------- */
-const AUTO_V={"contrast": 0.896, "highlights": 0.149, "shadows": -0.052, "fade": 0.175, "sat": -0.043, "vib": 0.019, "tnShH": 0.529, "tnShA": 0.029, "tnHiH": 0.985, "tnHiA": 0.065, "tnBal": 0.062, "hsl": [0.201, 0.07, 0.034, 0.25, -0.25, -0.25, 0.018, 0.034, 0.046, 0.087, 0.005, -0.286, -0.077, 0.281, -0.121, -0.287, -0.045, -0.1, 0.011, -0.35, -0.35, -0.35, 0.35, 0.311], "vig": 0.12, "hal": 0.05, "tint": -0.2};
+const AUTO_V={"contrast": 0.896, "highlights": 0.149, "shadows": -0.052, "fade": 0.175, "sat": -0.043, "vib": 0.019, "tnShH": 0.529, "tnShA": 0.029, "tnHiH": 0.985, "tnHiA": 0.065, "tnBal": 0.062, "hsl": [0.104, 0.114, 0.121, 0.036, -0.141, -0.193, -0.072, 0.054, -0.04, 0.01, -0.05, -0.102, -0.038, 0.02, -0.049, -0.104, 0.062, -0.054, -0.169, -0.2, -0.2, -0.198, 0.091, 0.175], "vig": 0.12, "hal": 0.05, "tint": -0.2};
 const AUTO_T=[0.147,0.357];
-const AUTO_F0={p5:.1,p50:.5,p95:.8,sat:.25,rb:0};
+const AUTO_F0={p5:.1,p50:.5,p95:.8,sat:.25,rb:0,skin:0};
 const sst=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)};
 function toneLum(l,v){ // luminance response of the tone chain on a neutral pixel (mirrors the shader)
   let g=Math.pow(Math.pow(l,2.2)*Math.pow(2,v.ev),1/2.2);
@@ -619,9 +634,16 @@ function autoValues(f){
   for(let i=0;i<16;i++){v.ev=(lo+hi)/2;if(toneLum(f.p50,v)>tgt)hi=v.ev;else lo=v.ev}
   v.ev=Math.max(-1.6,Math.min(f.p50<.2?.15:.5,v.ev));
   v.sat=Math.max(-.25,Math.min(.15,v.sat+(.26-f.sat)*.4));
+  const sk=sst(.02,.08,f.skin||0)*(1-sst(.30,.50,f.skin||0)); // people in frame: protect skin, soften contrast and warmth
+  if(sk>0){v.temp=Math.min(v.temp,.18-.06*sk);v.tint=-.2*(1-.5*sk);v.contrast=v.contrast*(1-.18*sk);v.sat=Math.min(v.sat,.06);
+    for(const i of [0,1,2,8,9,10,16,17,18])v.hsl[i]*=(1-.6*sk);v.skin=.85}
   return v;
 }
 const LOOKS=[
+{id:'peach',name:'Peach Skin',desc:'Soft skin, cool shadows, warm light.',v:{contrast:-.12,fade:.06,temp:.08,highlights:-.12,shadows:.12,sat:-.03,vib:.08,tnShH:.58,tnShA:.08,tnHiH:.08,tnHiA:.1,hal:.08,vig:.06,skin:.9}},
+{id:'greenlab',name:'Green Lab',desc:'Green-cyan shadows, warm skin, deep greens.',v:{"ev": -0.831, "contrast": 0.533, "highlights": 0.384, "shadows": -0.178, "fade": 0.365, "temp": 0.16, "tint": 0.073, "sat": 0.067, "vib": 0.0, "tnShH": 0.494, "tnShA": 0.19, "tnHiH": 0.928, "tnHiA": 0.281, "tnBal": 0.706, "hsl": [-0.004, 0.001, 0.003, 0.001, -0.0, 0.0, -0.002, -0.005, 0.032, 0.036, 0.024, 0.009, 0.002, 0.0, 0.003, 0.015, -0.045, -0.044, -0.021, -0.004, -0.0, 0.0, -0.005, -0.024], "skin": 0.85, "vig": 0.08}},
+{id:'daylight',name:'Clear Daylight',desc:'Clear skies, rich greens, crisp daylight with natural skin.',v:{"ev": -0.626, "contrast": 0.494, "highlights": 0.637, "shadows": -0.349, "fade": 0.154, "temp": -0.049, "tint": -0.3, "sat": 0.034, "vib": 0.001, "tnShH": 1.0, "tnShA": 0.026, "tnHiH": 0.597, "tnHiA": 0.086, "tnBal": -1.0, "hsl": [0.011, 0.02, 0.013, 0.003, -0.0, 0.0, -0.001, 0.001, 0.026, 0.013, -0.004, -0.006, -0.002, 0.0, 0.004, 0.018, -0.034, -0.041, -0.028, -0.01, -0.002, 0.0, -0.003, -0.015], "skin": 0.85, "vig": 0.08}},
+{id:'deepdye',name:'Deep Dye',desc:'Hard contrast, deep reds, cyan skies, protected skin.',v:{"ev": -0.065, "contrast": 0.147, "highlights": 0.183, "shadows": -0.165, "fade": 0.001, "temp": -0.336, "tint": -0.3, "sat": -0.098, "vib": 0.001, "tnShH": 0.653, "tnShA": 0.075, "tnHiH": 0.933, "tnHiA": 0.045, "tnBal": 0.606, "hsl": [0.026, 0.042, 0.031, 0.009, 0.001, 0.0, -0.0, 0.006, -0.003, -0.014, -0.013, -0.003, 0.003, 0.003, 0.004, 0.004, 0.004, 0.002, 0.001, 0.0, 0.0, 0.0, 0.002, 0.004], "skin": 0.85, "vig": 0.08}},
 {id:'auto',name:'Auto',desc:'Scene-adaptive cinematic grade: deep tones, warm highlights, teal skies. Retouch freely.',auto:true,v:{}},
 {id:'neutral',name:'CAPTR Neutral',desc:'Balanced, natural, dependable baseline.',v:{}},
 {id:'golden',name:'Golden Hour',desc:'Warm highlights, gentle contrast, natural skin.',v:{temp:.22,tint:.03,contrast:.42,highlights:-.12,shadows:.12,vib:.18,sat:.04,split:.5,sS:[.5,.47,.45],sH:[.62,.54,.42],vig:.14}},
@@ -643,7 +665,7 @@ const LOOKS=[
 {id:'pastel',name:'Pastel Dusk',desc:'Pastel peach and lavender sky, lifted blacks, soft film.',v:{ev:0.191,contrast:-0.193,highlights:0.336,shadows:0.454,fade:0.017,temp:0.4,tint:0.124,sat:-0.15,vib:0.001,tnShH:0.777,tnShA:0.109,tnHiH:0.999,tnHiA:0.449,tnBal:-0.442,hal:0.1,vig:0.1,hsl:[0.1, 0.05, -0.2, -0.3, 0.0, 0.35, 0.0, 0.0, -0.35, -0.35, -0.5, -0.6, -0.5, -0.4, 0.0, 0.0, 0.1, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0]}},
 {id:'cinema',name:'CAPTR Cinema',desc:'Flattens the phone look, then renders color like film: density, soft highlights, gamut roll-off.',v:{flat:.6,cin:1,contrast:.55,fade:.14,highlights:-.1,shadows:.08,vib:.1,tnShH:.55,tnShA:.18,tnHiH:.09,tnHiA:.22,hal:.18,vig:.15}}
 ];
-const ORDER=['auto','neutral','cinema','tealamber','parislight','amber','harbor','bluehour','forest','sepia','matte','neon','sunfade','bay','pastel','golden','night','negative','portrait','mono'];
+const ORDER=['auto','neutral','peach','greenlab','daylight','deepdye','cinema','tealamber','parislight','amber','harbor','bluehour','forest','sepia','matte','neon','sunfade','bay','pastel','golden','night','negative','portrait','mono'];
 LOOKS.sort((a,b)=>(ORDER.indexOf(a.id)+100)%100-(ORDER.indexOf(b.id)+100)%100);
 const S={ // app state
   tab:'camera',
@@ -651,13 +673,13 @@ const S={ // app state
   favLooks:new Set(store.get('favLooks',[])),
   customLooks:store.get('customLooks',[]),
   aspect:store.get('aspect','orig'),
-  timer:0, camEv:0, grid:store.get('grid',false),
+  timer:0, camEv:0, grid:store.get('grid',false), guide:store.get('guide',store.get('grid',false)?'thirds':'off'), guideFlip:0, lookSel:new Set(), lookSelecting:false,
   set:Object.assign({engineOn:true,camGrain:'off',captureFmt:'jpeg',crispOn:true,zoomUnit:'apple',customGate:24,refMm:24,mute:false,grainAnim:true,previewQ:'high',haptics:true,hires:true,fullres:true,quality:.92,size:'full'},store.get('settings',{})),
   setTab:'general',clip:null, lib:[], filter:'all', sort:'new', view:'grid', selecting:false, picked:new Set(),
   urls:[]
 };
 const allLooks=()=>LOOKS.concat(S.customLooks);
-const getLook=id=>allLooks().find(l=>l.id===id)||LOOKS[0];
+const getLook=id=>allLooks().find(l=>l.id===id)||LOOKS.find(l=>l.id==='neutral')||LOOKS[0];
 const lookValues=(id,f)=>{const l=getLook(id);const lv=l.auto?autoValues(f):l.v;const o={};for(const k in NEUTRAL){const v=lv[k]!==undefined?lv[k]:NEUTRAL[k];o[k]=Array.isArray(v)?v.slice():v}return o};
 const newRecipe=(id,extra,f)=>Object.assign({v:1,look:id,aspect:'orig',rot:0,zoom:1},lookValues(id,f),extra||{});
 const haptic=(ms=10)=>{if(S.set.haptics&&navigator.vibrate)try{navigator.vibrate(ms)}catch{}};
@@ -680,7 +702,7 @@ precision highp float;precision highp sampler2D;
 in vec2 vUv;out vec4 oc;
 uniform sampler2D uTex;uniform vec4 uCrop;uniform float uRot;uniform vec2 uOut;uniform float uSeed,uBypass;
 uniform float uEv,uCon,uPiv,uHi,uSh,uFade,uTemp,uTint,uSat,uVib,uMono,uSplit,uSharp,uGrain,uVig,uHal,uGSize,uGPx,uHRad,uHThr,uHLod,uGFrac,uGChroma,uGRough,uCrispOn,uCrisp,uClar,uDefr,uSnap,uCA,uCLod;
-uniform sampler2D uHalTex;uniform float uHLodMax,uHalTint;uniform vec3 uSS,uSH;uniform vec3 uHSL[8];uniform float uHslOn,uTnBal;uniform vec4 uTn;uniform float uFlat,uCin,uLtm,uLtmLod,uMids,uBlackP;uniform vec3 uGains;
+uniform sampler2D uHalTex;uniform float uHLodMax,uHalTint;uniform vec3 uSS,uSH;uniform vec3 uHSL[8];uniform float uHslOn,uTnBal;uniform vec4 uTn;uniform float uFlat,uCin,uLtm,uLtmLod,uHslLod,uMids,uBlackP,uSkin;uniform vec3 uGains;
 vec2 srcUV(vec2 uv){vec2 p=uCrop.xy+uv*uCrop.zw;
  if(uRot<.5)return p; if(uRot<1.5)return vec2(p.y,1.-p.x); if(uRot<2.5)return vec2(1.-p.x,1.-p.y); return vec2(1.-p.y,p.x);}
 vec3 tap(vec2 uv){return texture(uTex,srcUV(clamp(uv,0.,1.))).rgb;}
@@ -797,12 +819,14 @@ void main(){
  g=uFade*.18+g*(1.-uFade*.18);
 
  if(uHslOn>.5){
-  vec3 hv=rgb2hsv(clamp(g,0.,1.));float hd=hv.x*360.;
+  vec3 hv=rgb2hsv(clamp(g,0.,1.));
+  vec3 bl=pow(clamp(tapL(vUv,uHslLod),0.,1.),vec3(2.2))*tg*uGains;bl=pow(max(bl,0.),vec3(1./2.2));
+  vec3 bh=rgb2hsv(clamp(bl,0.,1.));float hd=bh.x*360.;
   float cs[9]=float[9](0.,30.,60.,120.,180.,240.,270.,300.,360.);
   vec3 adj=vec3(0.);
   for(int i=0;i<8;i++){float ha=cs[i],hb=cs[i+1];
    if(hd>=ha&&hd<hb){float t=smoothstep(0.,1.,(hd-ha)/(hb-ha));adj=mix(uHSL[i],uHSL[(i+1)>7?0:i+1],t);}}
-  float wS=smoothstep(.03,.28,hv.y);
+  float wS=smoothstep(.06,.40,bh.y)*smoothstep(.03,.16,hv.y);
   hv.x=fract(hv.x+adj.x*.125*wS);
   hv.y=clamp(adj.y<0.?hv.y*(1.+adj.y):hv.y+(1.-hv.y)*adj.y*.7,0.,1.);
   vec3 gg=hsv2rgb(hv);
@@ -821,6 +845,11 @@ void main(){
  g+=(uSS-.5)*uSplit*.35*s2+(uSH-.5)*uSplit*.35*h2;
  if(uTn.y>0.||uTn.w>0.){float bl=uTnBal*.3;float s3=1.-smoothstep(0.,.5+bl,l),h3=smoothstep(.5+bl,1.,l);
   g+=hue2rgb(uTn.x)*uTn.y*.5*s3+hue2rgb(uTn.z)*uTn.w*.5*h3;}
+ if(uSkin>0.){ // skin guard: keep skin tones in a natural hue / saturation range after any grade
+  vec3 sv=rgb2hsv(clamp(g,0.,1.));float sh=sv.x*360.;
+  float k=smoothstep(0.,8.,sh)*(1.-smoothstep(40.,55.,sh))*smoothstep(.10,.22,sv.y)*(1.-smoothstep(.60,.80,sv.y))*smoothstep(.10,.25,sv.z)*uSkin;
+  if(k>.001){sv.x=mix(sv.x,clamp(sh,15.,27.)/360.,k);sv.y=mix(sv.y,clamp(sv.y,.20,.46),k*.8);g=hsv2rgb(sv);}
+ }
  float d=length((vUv-.5)*vec2(1.25,1.25)); g*=1.-uVig*smoothstep(.28,.88,d)*.75;
  if(uGrain>0.){
   l=lum(g);
@@ -921,7 +950,7 @@ void main(){
     this.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.tex);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-    this.U={};for(const n of ['uTex','uCrop','uRot','uOut','uSeed','uBypass','uEv','uCon','uPiv','uHi','uSh','uFade','uTemp','uTint','uSat','uVib','uMono','uSplit','uSharp','uGrain','uVig','uHal','uSS','uSH','uGSize','uGPx','uHRad','uHThr','uHLod','uGFrac','uGChroma','uGRough','uCrispOn','uCrisp','uClar','uDefr','uSnap','uCA','uCLod','uHSL[0]','uHslOn','uTn','uTnBal','uHalTex','uHLodMax','uHalTint','uFlat','uCin','uLtm','uLtmLod','uMids','uBlackP','uGains'])this.U[n]=gl.getUniformLocation(pr,n);
+    this.U={};for(const n of ['uTex','uCrop','uRot','uOut','uSeed','uBypass','uEv','uCon','uPiv','uHi','uSh','uFade','uTemp','uTint','uSat','uVib','uMono','uSplit','uSharp','uGrain','uVig','uHal','uSS','uSH','uGSize','uGPx','uHRad','uHThr','uHLod','uGFrac','uGChroma','uGRough','uCrispOn','uCrisp','uClar','uDefr','uSnap','uCA','uCLod','uHSL[0]','uHslOn','uTn','uTnBal','uHalTex','uHLodMax','uHalTint','uFlat','uCin','uLtm','uLtmLod','uHslLod','uSkin','uMids','uBlackP','uGains'])this.U[n]=gl.getUniformLocation(pr,n);
     this.maxTex=gl.getParameter(gl.MAX_TEXTURE_SIZE);this.sw=0;this.sh=0;
   }
   setSource(src,w,h){this.srcId=(this.srcId||0)+1;this.dnKey='';const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);gl.generateMipmap(gl.TEXTURE_2D);this.sw=w;this.sh=h}
@@ -985,7 +1014,7 @@ void main(){
       gl.uniform3fv(U['uHSL[0]'],pk);gl.uniform1f(U.uHslOn,any);gl.uniform4f(U.uTn,r.tnShH??.55,r.tnShA??0,r.tnHiH??.08,r.tnHiA??0);gl.uniform1f(U.uTnBal,r.tnBal??0)}
     gl.uniform1f(U.uFlat,r.flat??0);gl.uniform1f(U.uCin,r.cin??0);
     {const aw=engOn?(r.awb??0):0,g3=r._gains||[1,1,1];gl.uniform3f(U.uGains,1+(g3[0]-1)*aw,1+(g3[1]-1)*aw,1+(g3[2]-1)*aw)}
-    gl.uniform1f(U.uLtm,engOn?(r.ltm??0):0);gl.uniform1f(U.uLtmLod,Math.log2(Math.max(2,.05*cr.ph)));gl.uniform1f(U.uMids,engOn?(r.mids??0):0);gl.uniform1f(U.uBlackP,engOn?(r.blackP??0):0);
+    gl.uniform1f(U.uLtm,engOn?(r.ltm??0):0);gl.uniform1f(U.uLtmLod,Math.log2(Math.max(2,.05*cr.ph)));gl.uniform1f(U.uSkin,r.skin??0);gl.uniform1f(U.uHslLod,Math.log2(Math.max(2,.014*cr.ph)));gl.uniform1f(U.uMids,engOn?(r.mids??0):0);gl.uniform1f(U.uBlackP,engOn?(r.blackP??0):0);
     gl.uniform3fv(U.uSS,r.sS);gl.uniform3fv(U.uSH,r.sH);
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
     return cr;
@@ -1133,7 +1162,7 @@ function updateCamUI(){
   const hw=!!cam.caps.exposureCompensation;
   $('#c-ev').textContent='EV '+(cam.ev>=0?'+':'')+cam.ev.toFixed(1);
   renderShots();
-  $('#gridov').classList.toggle('on',S.grid);$('#b-grid').setAttribute('aria-pressed',S.grid);
+  $('#b-grid').setAttribute('aria-pressed',S.guide!=='off');drawGuide();renderGuidePills();
   const th=S.lib.slice().sort((a,b)=>b.date-a.date)[0];
   const lb=$('#b-last');if(th&&th.thumbUrl){lb.style.backgroundImage=`url(${th.thumbUrl})`;lb.innerHTML=''}else{lb.style.backgroundImage='';lb.innerHTML=ic('images')}
   updateReadout();
@@ -1151,11 +1180,53 @@ function camLoop(){
   const cr=cropFor(rec.aspect,0,vw,vh,1);
   const wrap=finder.parentElement,W=wrap.clientWidth,H=wrap.clientHeight;
   const key=cr.r.toFixed(4)+'|'+W+'|'+H;
-  if(key!==lastCamSize){lastCamSize=key;let w=W,h=W/cr.r;if(h>H){h=H;w=H*cr.r}finder.style.width=Math.floor(w)+'px';finder.style.height=Math.floor(h)+'px'}
+  if(key!==lastCamSize){lastCamSize=key;let w=W,h=W/cr.r;if(h>H){h=H;w=H*cr.r}finder.style.width=Math.floor(w)+'px';finder.style.height=Math.floor(h)+'px';requestAnimationFrame(drawGuide)}
   const cw=finder.clientWidth,ch=finder.clientHeight;if(!cw||!ch)return;
   const dpr=Math.min(devicePixelRatio||1,3),k=Math.min(1,(S.set.previewQ==='std'?1100:1600)/Math.max(cw*dpr,ch*dpr));
   camCanvas.classList.toggle('mirror',cam.facing==='user');
   try{cam.renderer.setSource(video,vw,vh);cam.renderer.render(rec,cw*dpr*k,ch*dpr*k,false,S.set.grainAnim!==false?Math.floor(performance.now()/41.7)%1000:3)}catch(e){}
+}
+/* ---------- composition guides ---------- */
+const GUIDES=[['thirds','Thirds'],['triangle','Triangle'],['aerial','Aerial Tri'],['flatlay','Flatlay'],['portrait','Portrait']];
+let guideLabT=null;
+function drawGuide(){
+  const el=$('#guide-ov');if(!el)return;const w=finder.clientWidth,h=finder.clientHeight;if(!w||!h)return;
+  const g=S.guide,f=S.guideFlip;if(g==='off'){el.innerHTML='';return}
+  const m=Math.min(w,h),R=m*.125,X=x=>+(x*w).toFixed(1),Y=y=>+(y*h).toFixed(1);let o='';
+  const circ=(x,y,r=R)=>`<circle class="gd" cx="${X(x)}" cy="${Y(y)}" r="${+r.toFixed(1)}"/>`;
+  const link=(a,b)=>{const ax=a[0]*w,ay=a[1]*h,bx=b[0]*w,by=b[1]*h,d=Math.hypot(bx-ax,by-ay)||1,ux=(bx-ax)/d,uy=(by-ay)/d;
+    return `<line class="gd" x1="${+(ax+ux*R*1.02).toFixed(1)}" y1="${+(ay+uy*R*1.02).toFixed(1)}" x2="${+(bx-ux*R*1.02).toFixed(1)}" y2="${+(by-uy*R*1.02).toFixed(1)}"/>`};
+  const tri=(P,mark)=>{o+=link(P[0],P[1])+link(P[1],P[2])+link(P[2],P[0]);P.forEach(p=>o+=circ(p[0],p[1]));
+    if(mark){const[x,y]=[X(P[0][0]),Y(P[0][1])],k=R*.32;o+=`<path class="gd" style="stroke-dasharray:none" d="M${x-k} ${y+k*.6} L${x} ${y-k*.7} L${x+k} ${y+k*.6}"/>`}};
+  if(g==='thirds'){
+    for(const t of [1/3,2/3]){o+=`<line class="gs" x1="${X(t)}" y1="0" x2="${X(t)}" y2="${h}"/><line class="gs" x1="0" y1="${Y(t)}" x2="${w}" y2="${Y(t)}"/>`}
+    for(const a of [1/3,2/3])for(const b of [1/3,2/3])o+=circ(a,b,m*.04);
+  }else if(g==='triangle'){
+    const P=f%2?[[.5,.72],[.22,.32],[.78,.32]]:[[.5,.28],[.22,.68],[.78,.68]];tri(P,true);
+  }else if(g==='aerial'){
+    let P=[[.44,.28],[.30,.63],[.68,.57]];if(f%2)P=P.map(p=>[1-p[0],p[1]]);tri(P,true);
+  }else if(g==='flatlay'){
+    const c=[.5,.5];
+    if(f%2){const s=.30*m;o+=`<rect class="gd" x="${X(.5)-s}" y="${Y(.5)-s}" width="${2*s}" height="${2*s}" transform="rotate(45 ${X(.5)} ${Y(.5)})"/>`}
+    else o+=circ(.5,.5,m*.30);
+    o+=`<line class="gs" x1="${X(.5)}" y1="0" x2="${X(.5)}" y2="${h}"/><line class="gs" x1="0" y1="${Y(.5)}" x2="${w}" y2="${Y(.5)}"/>`;
+    o+=`<circle class="gk" cx="${X(.5)}" cy="${Y(.5)}" r="3.5"/>`;
+    for(const a of [.16,.84])for(const b of [.14,.86])o+=circ(a,b,m*.06);
+  }else if(g==='portrait'){
+    const cx=f%2?.64:.36,cy=.34;
+    o+=`<ellipse class="gd" cx="${X(cx)}" cy="${Y(cy)}" rx="${+(w*.17).toFixed(1)}" ry="${+(h*.15).toFixed(1)}"/>`;
+    o+=`<line class="gd" x1="${X(cx-.12)}" y1="${Y(cy-.02)}" x2="${X(cx+.12)}" y2="${Y(cy-.02)}"/>`;
+    o+=`<path class="gd" fill="none" d="M${X(cx-.34)} ${Y(.86)} C${X(cx-.30)} ${Y(.62)} ${X(cx-.12)} ${Y(.55)} ${X(cx)} ${Y(.55)} C${X(cx+.12)} ${Y(.55)} ${X(cx+.30)} ${Y(.62)} ${X(cx+.34)} ${Y(.86)}"/>`;
+    o+=`<line class="gs" x1="${X(1/3)}" y1="0" x2="${X(1/3)}" y2="${h}"/><line class="gs" x1="${X(2/3)}" y1="0" x2="${X(2/3)}" y2="${h}"/>`;
+  }
+  el.setAttribute('viewBox',`0 0 ${w} ${h}`);el.innerHTML=o;
+}
+function showGuideLabel(){const l=$('#guide-lab'),G=GUIDES.find(x=>x[0]===S.guide);if(!l||!G)return;l.firstElementChild.textContent=G[1];l.classList.add('show');clearTimeout(guideLabT);guideLabT=setTimeout(()=>l.classList.remove('show'),2300)}
+function renderGuidePills(){
+  const p=$('#gpills');if(!p)return;p.classList.toggle('on',S.guide!=='off');p.innerHTML='';
+  GUIDES.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.className=S.guide===k?'on':'';
+    b.onclick=()=>{if(S.guide===k){S.guideFlip++}else{S.guide=k;S.guideFlip=0}store.set('guide',S.guide);haptic(8);drawGuide();renderGuidePills();showGuideLabel()};p.appendChild(b)});
+  p.onpointerdown=e=>e.stopPropagation();p.onpointermove=e=>e.stopPropagation();p.onpointerup=e=>e.stopPropagation();
 }
 const UNITS=[['s8','Super8',5.79],['s16','Super16',12.52],['m43','Micro-Four Thirds',17.3],['s35','Super35 / APS-C',24.89],['vv','VistaVision / Stills 35',36],['p5','5-perf 65mm',52.48],['p15','15-perf 65mm',70.41],['apple','Apple “Zoom Factor”'],['dwr','Distance-To-Width Ratio'],['fov','Field of View (°)'],['custom','Custom']];
 function fovRad(z){const vw=video.videoWidth||16,vh=video.videoHeight||9,land=vw>=vh,Wff=land?34.6:25.95;
@@ -1227,7 +1298,7 @@ $('#b-flash').onclick=async()=>{
   else cam.flash=!cam.flash;
   haptic();updateCamUI();
 };
-$('#b-grid').onclick=()=>{S.grid=!S.grid;store.set('grid',S.grid);updateCamUI()};
+$('#b-grid').onclick=()=>{S.guide=S.guide==='off'?'thirds':'off';S.guideFlip=0;store.set('guide',S.guide);updateCamUI();if(S.guide!=='off')showGuideLabel()};
 $('#b-settings').onclick=()=>switchTab('settings');
 $('#b-fmt').onclick=()=>{
   if(cam.native){const c=cam.nativeCaps||{};sheet(`<h3>Capture format</h3><p>CAPTR is using the iPhone’s native camera.</p><dl class="kv"><dt>JPEG / HEIC</dt><dd>Standard photo processed by iPhone, converted to JPEG.</dd><dt>RAW</dt><dd>${c.raw?'Available. Saved as a DNG and developed with a neutral base.':'Not available on this camera.'}</dd><dt>ProRAW</dt><dd>${c.proraw?'Available. Saved as a DNG and developed with a neutral base.':'Only on Pro iPhones.'}</dd><dt>Originals</dt><dd>DNG files stay inside CAPTR. Share or save them from a photo’s info sheet.</dd></dl><div class="acts"><button class="btn ghost" onclick="document.getElementById('scrim').classList.remove('on')">Close</button></div>`);return}
@@ -1388,11 +1459,17 @@ function renderLibrary(){
   items.forEach(p=>{
     const b=document.createElement('button');b.className='tile'+(S.picked.has(p.id)?' picked':'');b.setAttribute('aria-label',`Photo ${fmtDate(p.date)}${p.fav?', favorite':''}`);
     b.innerHTML=`<div class="th" style="background-image:url(${p.thumbUrl})"></div><div class="meta"><b>${fmtDate(p.date)}</b><span>${p.w}×${p.h} · ${fmtBytes(p.size)}</span></div><div class="badge">${p.dngPath||p.hasDng?'<span>RAW</span>':''}${p.type==='video'?'<span>▶ '+fmtDur(p.dur)+'</span>':''}${p.fav?'<span>♥</span>':''}${p.edited?'<span>EDIT</span>':''}${p.exported?'<span>OUT</span>':''}</div><div class="sel">${ic('check',14)}</div>`;
-    b.onclick=()=>{if(S.selecting){S.picked.has(p.id)?S.picked.delete(p.id):S.picked.add(p.id);renderLibrary()}else openEditor(p.id)};
+    let lpT=null,lpDone=false;
+    const lpStart=()=>{lpDone=false;clearTimeout(lpT);lpT=setTimeout(()=>{lpDone=true;haptic(15);S.selecting=true;S.picked.add(p.id);renderLibrary()},480)};
+    const lpEnd=()=>clearTimeout(lpT);
+    b.addEventListener('pointerdown',lpStart);['pointerup','pointerleave','pointercancel','pointermove'].forEach(ev=>b.addEventListener(ev,lpEnd));
+    b.addEventListener('contextmenu',e=>e.preventDefault());
+    b.onclick=()=>{if(lpDone){lpDone=false;return}if(S.selecting){S.picked.has(p.id)?S.picked.delete(p.id):S.picked.add(p.id);renderLibrary()}else openEditor(p.id)};
     g.appendChild(b);
   });
   const ab=$('#l-actions');ab.style.display=S.selecting?'flex':'none';
-  ab.innerHTML=`<span style="align-self:center;color:var(--mute);font-size:13px">${S.picked.size} selected</span><button class="chip" id="a-exp" ${S.picked.size?'':'disabled'}>${ic('share',16)}Export</button><button class="chip" id="a-fav" ${S.picked.size?'':'disabled'}>${ic('heart',16)}Favorite</button><button class="chip" id="a-del" ${S.picked.size?'':'disabled'} style="color:var(--bad)">${ic('trash',16)}Delete</button>`;
+  ab.innerHTML=`<span style="align-self:center;color:var(--mute);font-size:13px">${S.picked.size} selected</span><button class="chip" id="a-all">${S.picked.size===visibleLib().length?'None':'All'}</button><button class="chip" id="a-exp" aria-label="Export selected" ${S.picked.size?'':'disabled'}>${ic('share',18)}</button><button class="chip" id="a-fav" aria-label="Favorite selected" ${S.picked.size?'':'disabled'}>${ic('heart',18)}</button><button class="chip" id="a-del" ${S.picked.size?'':'disabled'} style="color:var(--bad)">${ic('trash',16)}Delete</button>`;
+  $('#a-all').onclick=()=>{const v=visibleLib();if(S.picked.size===v.length)S.picked.clear();else v.forEach(p=>S.picked.add(p.id));renderLibrary()};
   $('#a-exp').onclick=()=>batchExport([...S.picked]);
   $('#a-fav').onclick=async()=>{for(const id of S.picked){const p=S.lib.find(x=>x.id===id);p.fav=true;await persistMeta(p)}renderLibrary()};
   $('#a-del').onclick=async()=>{const n=S.picked.size;if(await confirmSheet(`Delete ${n} photo${n>1?'s':''}?`,"This removes the originals and edits from CAPTR only. Copies you already saved or shared to your device's Photos or Files are not affected.",'Delete',true)){for(const id of [...S.picked])await deletePhoto(id);S.picked.clear();S.selecting=false;renderLibrary();updateCamUI()}};
@@ -1786,7 +1863,7 @@ const CONTROLS={
   contrast:[['contrast','S-Curve Contrast',-2,4,.01],['pivot','Pivot',.1,.9,.01]],
   shadhi:[['highlights','Highlights',-1,1,.01],['shadows','Shadows',-1,1,.01]],
   wb:[['temp','Temperature',-1,1,.01],['tint','Tint',-1,1,.01]],
-  sat:[['sat','Saturation',-1,1,.01],['vib','Vibrance',-1,1,.01],['mono','Black & White',0,1,.01]],
+  sat:[['sat','Saturation',-1,1,.01],['vib','Vibrance',-1,1,.01],['skin','Skin Tone Guard',0,1,.01],['mono','Black & White',0,1,.01]],
   split:[['tnShH','Shadow Hue',0,1,.002],['tnShA','Shadow Amount',0,1,.01],['tnHiH','Highlight Hue',0,1,.002],['tnHiA','Highlight Amount',0,1,.01],['tnBal','Balance',-1,1,.01]],
   engine:[['dnL','Noise Reduction',0,1,.01],['dnC','Color Noise',0,1,.01],['dnRest','Keep Texture',0,1,.01],['dnShadow','Shadow Denoise',0,1,.01],['crisp','Detail',0,1.5,.01],['clarity','Micro-contrast',0,1,.01],['ltm','Local Tone',0,1,.01],['mids','Midtones',-1,1,.01],['blackP','Protect Blacks',0,1,.01],['awb','Auto White Balance',0,1,.01]],
   grain:[['grain','Amplitude',0,2.5,.01],['grainSize','Grain Size',.5,3,.01],['grainRough','Roughness',0,1,.01],['grainChroma','Color Grain',0,1,.01]],
@@ -1871,7 +1948,7 @@ async function flushSave(){
     const ti=E.img||E.prev;if(ti){const blob=await makeThumb(ti,rec);if(p.thumbUrl)URL.revokeObjectURL(p.thumbUrl);p.thumb=blob;p.thumbUrl=URL.createObjectURL(blob);await persistMeta(p)}}catch{}
 }
 function updateEdBtns(){
-  $('#e-export').innerHTML=ic('download',26);$('#e-undo').innerHTML=ic('undo');$('#e-redo').innerHTML=ic('redo');$('#e-close').innerHTML=ic('chev');$('#e-info').innerHTML=ic('info');$('#e-fav').innerHTML=ic('heart');
+  $('#e-export').innerHTML=ic('download',26);$('#e-undo').innerHTML=ic('undo');$('#e-redo').innerHTML=ic('redo');$('#e-close').innerHTML=ic('chev');$('#e-info').innerHTML=ic('info');$('#e-trash').innerHTML=ic('trash');$('#e-fav').innerHTML=ic('heart');
   $('#e-undo').disabled=!E.undo.length;$('#e-redo').disabled=!E.redo.length;
   const f=$('#e-fav');f.setAttribute('aria-pressed',!!(E.p&&E.p.fav));f.firstElementChild.style.fill=(E.p&&E.p.fav)?'currentColor':'none';
   $('#e-cmp').innerHTML=ic('cmp',16)+'Original';$('#e-copy').innerHTML=ic('copy',16)+'Copy';$('#e-paste').innerHTML=ic('paste',16)+'Paste';$('#e-paste').disabled=!S.clip;
@@ -1886,6 +1963,7 @@ $('#e-info').onclick=()=>{const p=E.p;sheet(`<h3>Photo info</h3><dl class="kv"><
   const dsh=$('#i-dng-sh',sh);if(dsh){dsh.onclick=async()=>{try{await NativeCam.shareFile({path:p.dngPath})}catch(e){toast('Couldn’t share the DNG')}};
     $('#i-dng-ph',sh).onclick=async()=>{try{await NativeCam.saveToPhotos({path:p.dngPath});toast('DNG saved to Photos')}catch(e){toast(String(e&&e.message||'Couldn’t save the DNG'),3600)}}}
   $('#i-del',sh).onclick=async()=>{if(await confirmSheet('Delete this photo?',"This removes the original and its edits from CAPTR only. Copies already saved to your device's Photos or Files are not affected.",'Delete',true)){E.dirty=false;const id=E.p.id;E.open=false;$('#editor').classList.remove('on');if(E.url)URL.revokeObjectURL(E.url);await deletePhoto(id);renderLibrary();updateCamUI();toast('Deleted from CAPTR')}}})};
+$('#e-trash').onclick=async()=>{if(!E.p)return;if(await confirmSheet('Delete this photo?',"This removes the original and its edits from CAPTR only. Copies already saved to your device's Photos or Files are not affected.",'Delete',true)){E.dirty=false;const id=E.p.id;E.open=false;$('#editor').classList.remove('on');if(E.url)URL.revokeObjectURL(E.url);await deletePhoto(id);renderLibrary();updateCamUI();toast('Deleted from CAPTR')}};
 // hold to compare
 const cmpOn=()=>{E.bypass=true;edRender()},cmpOff=()=>{E.bypass=false;edRender()};
 ['#e-cmp','#e-stage'].forEach(s=>{const el=$(s);el.addEventListener('pointerdown',e=>{if(e.target.closest('.ed-spin'))return;cmpOn()});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,cmpOff))});
@@ -2018,6 +2096,16 @@ function sampleScene(){
   return c;
 }
 let scene=null;
+async function removeLooks(ids){
+  const L=S.customLooks.filter(l=>ids.includes(l.id));if(!L.length)return;
+  const names=L.map(l=>'“'+l.name+'”').join(', ');
+  const ok=await confirmSheet(L.length>1?`Remove ${L.length} looks?`:'Remove this look?',`Are you sure? ${names} will be removed from your looks. Photos that already use ${L.length>1?'them':'it'} keep their settings. This can’t be undone.`,L.length>1?`Yes, remove ${L.length}`:'Yes, remove',true);
+  if(!ok)return false;
+  S.customLooks=S.customLooks.filter(l=>!ids.includes(l.id));ids.forEach(i=>S.favLooks.delete(i));
+  if(ids.includes(S.camLook)){S.camLook='auto';store.set('camLook','auto')}
+  store.set('customLooks',S.customLooks);store.set('favLooks',[...S.favLooks]);S.lookSel.clear();if(!S.customLooks.length)S.lookSelecting=false;
+  renderLooks();updateCamUI();toast(L.length>1?'Looks removed':'Look removed');return true;
+}
 function renderLooks(){
   scene=scene||sampleScene();const R=getThumbR();R.setSource(scene,360,360);
   const draw=(host,list)=>{host.innerHTML='';list.forEach(l=>{
@@ -2031,13 +2119,23 @@ function renderLooks(){
     const mk=(icn,label,fn,on)=>{const x=document.createElement('button');x.className='ib';x.setAttribute('aria-label',label);x.innerHTML=ic(icn,20);if(on){x.style.color='var(--acc)';x.firstElementChild.style.fill='currentColor'}x.onclick=e=>{e.stopPropagation();fn()};bar.appendChild(x)};
     mk('star',fav?'Unfavorite':'Favorite',()=>{fav?S.favLooks.delete(l.id):S.favLooks.add(l.id);store.set('favLooks',[...S.favLooks]);renderLooks()},fav);
     if(l.custom){mk('pencil','Rename',async()=>{const n=await promptSheet('Rename look',l.name,'Rename');if(n){l.name=n;store.set('customLooks',S.customLooks);renderLooks()}});
-      mk('trash','Delete',async()=>{if(await confirmSheet('Delete look?',`“${l.name}” will be removed. Photos already using it keep their settings.`,'Delete',true)){S.customLooks=S.customLooks.filter(x=>x.id!==l.id);if(S.camLook===l.id){S.camLook='neutral';store.set('camLook','neutral')}store.set('customLooks',S.customLooks);renderLooks()}})}
+      mk('trash','Remove look',()=>removeLooks([l.id]))}
     b.appendChild(bar);
-    b.style.cursor='pointer';b.onclick=()=>{S.camLook=l.id;store.set('camLook',l.id);haptic(8);renderLooks();updateCamUI();toast(l.name+' is now your camera look')};
+    b.style.cursor='pointer';
+    if(l.custom&&S.lookSelecting){const pk=document.createElement('div');pk.className='pick';pk.innerHTML=S.lookSel.has(l.id)?ic('check',14):'';b.insertBefore(pk,b.firstChild);b.classList.toggle('sel',S.lookSel.has(l.id));
+      b.onclick=()=>{S.lookSel.has(l.id)?S.lookSel.delete(l.id):S.lookSel.add(l.id);haptic(6);renderLooks()};bar.style.display='none'}
+    else b.onclick=()=>{S.camLook=l.id;store.set('camLook',l.id);haptic(8);renderLooks();updateCamUI();toast(l.name+' is now your camera look')};
     host.appendChild(b)})};
   const sortFav=a=>a.slice().sort((x,y)=>(S.favLooks.has(y.id)-S.favLooks.has(x.id)));
   draw($('#look-built'),sortFav(LOOKS));draw($('#look-custom'),sortFav(S.customLooks));
   $('#custom-h').style.display=$('#look-custom').style.display=S.customLooks.length?'':'none';
+  if($('#custom-h').style.display==='')$('#custom-h').style.display='flex';
+  const rm=$('#lk-rm');rm.textContent=S.lookSelecting?'Done':'Remove…';rm.onclick=()=>{S.lookSelecting=!S.lookSelecting;S.lookSel.clear();renderLooks()};
+  let lb=$('#lk-bar');if(!lb){lb=document.createElement('div');lb.id='lk-bar';lb.className='lk-bar';$('#s-looks').appendChild(lb)}
+  lb.style.display=S.lookSelecting?'flex':'none';
+  lb.innerHTML=`<span style="color:var(--mute);font-size:12px;white-space:nowrap">${S.lookSel.size} selected</span><span style="flex:1"></span><button class="chip" id="lk-all">${S.lookSel.size===S.customLooks.length?'None':'All'}</button><button class="chip" id="lk-del" ${S.lookSel.size?'':'disabled'} style="color:var(--bad)">${ic('trash',16)}Remove</button>`;
+  $('#lk-all').onclick=()=>{if(S.lookSel.size===S.customLooks.length)S.lookSel.clear();else S.customLooks.forEach(l=>S.lookSel.add(l.id));renderLooks()};
+  $('#lk-del').onclick=()=>removeLooks([...S.lookSel]);
 }
 
 /* ---------- settings ---------- */
