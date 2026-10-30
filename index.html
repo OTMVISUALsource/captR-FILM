@@ -155,15 +155,16 @@ select{background:var(--s2);color:var(--tx);border:0;border-radius:8px;padding:8
 .ed-top{display:flex;align-items:center;gap:2px;padding:calc(var(--sat) + 4px) 6px 4px}
 .ed-top .sp{flex:1}
 .ed-stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:4px 0;touch-action:none;user-select:none;-webkit-user-select:none}
-.ed-stage canvas{display:block;flex:none}
+.ed-stage{overflow:hidden}.ed-stage canvas{display:block;flex:none;max-width:100%;max-height:100%}
 .ed-tag{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#000b;padding:3px 12px;border-radius:12px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;display:none}
 .ed-tag.on{display:block}
 .ed-spin{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);background:var(--bg)}
 .ed-bottom{background:var(--s1);border-top:1px solid var(--line);padding-bottom:var(--sab)}
 .ed-actions{display:flex;gap:6px;padding:8px 10px 0;align-items:center;overflow-x:auto;scrollbar-width:none}
 .ed-actions .sp{flex:1}
-.ed-panel{height:min(40vh,330px);overflow-y:auto;padding:4px 14px 8px}
+.ed-panel{height:min(36vh,300px);overflow-y:auto;padding:4px 14px 8px}
 .ed-panel.looks{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;align-items:flex-start;padding-top:12px}
+.ed-panel.looks{height:auto;min-height:0;padding-bottom:14px}.ed-panel.looks .lk{flex:none}
 .ed-tabs{display:flex;border-top:1px solid var(--line)}
 .ed-tabs button{flex:1;min-height:48px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 .ed-tabs button[aria-selected=true]{color:var(--acc);box-shadow:inset 0 2px 0 var(--acc)}
@@ -270,7 +271,8 @@ svg.i{stroke-width:1.65}
 #s-camera .topbar .mark svg{height:19px;width:auto;opacity:.95}
 #s-camera .finder-wrap{position:absolute;inset:0;padding:0;z-index:1}
 #s-camera .finder{border-radius:0}
-.cam-bottom{position:absolute;left:0;right:0;bottom:calc(-1 * (var(--tabh) + var(--sab)));z-index:5;padding-top:64px;padding-bottom:calc(var(--tabh) + var(--sab) + 22px);background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.5) 30%,rgba(0,0,0,.82) 62%,#000 100%)}
+.cam-bottom{position:absolute;left:0;right:0;bottom:calc(var(--tabh) + var(--sab) + 22px);z-index:5;padding-top:64px;background:none}
+.cam-bottom::before{content:"";position:absolute;left:0;right:0;top:0;bottom:calc(-2 * (var(--tabh) + var(--sab)) - 22px);z-index:-1;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,.08) 12%,rgba(0,0,0,.24) 26%,rgba(0,0,0,.46) 40%,rgba(0,0,0,.72) 58%,rgba(0,0,0,.93) 72%,rgba(0,0,0,1) 86%,#000 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 22%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 22%,#000 100%)}
 .readout{padding:0 18px 6px;text-shadow:0 1px 6px #000}
 .shots{padding:2px 14px 4px;gap:10px}
 .shot{background:var(--glass);border:1px solid var(--line);border-radius:16px;height:52px}
@@ -382,6 +384,7 @@ body.booting #app>:not(#splash){visibility:hidden}
   <section class="screen" id="s-looks" aria-label="Looks">
     <div class="page-h"><div><h2>Looks</h2><small>Rendering profiles. The active look is used live on camera.</small></div></div>
     <div class="scroll"><div class="sec-h">Built-in</div><div class="looklist" id="look-built"></div>
+    <div id="lk-safe"></div>
     <div class="sec-h" id="custom-h" style="display:flex;align-items:center;justify-content:space-between"><span>Your looks</span><button class="chip" id="lk-rm" style="flex:none">Remove…</button></div><div class="looklist" id="look-custom"></div></div>
   </section>
 
@@ -693,7 +696,13 @@ const saveSet=()=>store.set('settings',S.set);
 const BK_KEYS=['customLooks','favLooks','settings','camLook'];let bkT=null,bkReady=false;
 (()=>{const _s=store.set;store.set=(k,v)=>{_s(k,v);if(BK_KEYS.includes(k))scheduleBackup()}})();
 function scheduleBackup(){if(!bkReady)return;clearTimeout(bkT);bkT=setTimeout(()=>{try{DB.put('orig',{id:'__backup',data:{customLooks:S.customLooks,favLooks:[...S.favLooks],settings:S.set,camLook:S.camLook,t:Date.now()}}).catch(()=>{})}catch{}},400)}
-function looksBackupFile(){const b=new Blob([JSON.stringify({app:'CAPTR',v:1,customLooks:S.customLooks,favLooks:[...S.favLooks]},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='captr-looks-backup.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+async function looksBackupFile(){
+  const json=JSON.stringify({app:'CAPTR',v:2,saved:new Date().toISOString(),customLooks:S.customLooks,favLooks:[...S.favLooks],camLook:S.camLook},null,1);
+  const name='captr-looks-'+new Date().toISOString().slice(0,10)+'.json';
+  const file=new File([json],name,{type:'application/json'});let ok=false;
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'CAPTR looks backup'});ok=true}}catch(e){if(e&&e.name==='AbortError')return false}
+  if(!ok){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);ok=true}
+  S.set.lastBackup=Date.now();S.set.lastBackupN=S.customLooks.length;saveSet();try{renderLooks()}catch{}return true}
 async function restoreLooksFile(file){try{const d=JSON.parse(await file.text());if(!Array.isArray(d.customLooks))throw 0;const have=new Set(S.customLooks.map(l=>l.id));let n=0;
   d.customLooks.forEach(l=>{if(l&&l.id&&l.v&&!have.has(l.id)){S.customLooks.push(l);n++}});store.set('customLooks',S.customLooks);
   (d.favLooks||[]).forEach(i=>S.favLooks.add(i));store.set('favLooks',[...S.favLooks]);renderLooks();toast(n?`Restored ${n} look${n>1?'s':''}`:'All of those looks are already here')}catch{toast('That file isn’t a CAPTR looks backup')}}
@@ -2015,6 +2024,7 @@ $('#e-info').onclick=()=>{const p=E.p;sheet(`<h3>Photo info</h3><dl class="kv"><
 $('#e-trash').onclick=async()=>{if(!E.p)return;if(await confirmSheet('Delete this photo?',"This removes the original and its edits from CAPTR only. Copies already saved to your device's Photos or Files are not affected.",'Delete',true)){E.dirty=false;const id=E.p.id;E.open=false;$('#editor').classList.remove('on');if(E.url)URL.revokeObjectURL(E.url);await deletePhoto(id);renderLibrary();updateCamUI();toast('Deleted from CAPTR')}};
 // hold to compare
 const cmpOn=()=>{E.bypass=true;edRender()},cmpOff=()=>{E.bypass=false;edRender()};
+try{let _rt=0;new ResizeObserver(()=>{cancelAnimationFrame(_rt);_rt=requestAnimationFrame(()=>{if(E.open)edRender()})}).observe($('#e-stage'))}catch{}
 ['#e-cmp','#e-stage'].forEach(s=>{const el=$(s);el.addEventListener('pointerdown',e=>{if(e.target.closest('.ed-spin'))return;cmpOn()});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,cmpOff))});
 $('#e-cmp').addEventListener('contextmenu',e=>e.preventDefault());
 $('#e-reset').onclick=()=>{E.lastCommit=clone(E.rec);E.rec=newRecipe(E.rec.look,{aspect:E.rec.aspect,rot:E.rec.rot,zoom:E.rec.zoom},E.an&&E.an.f);commit();edRender();renderEdUI();toast('Reset to look')};
@@ -2025,6 +2035,8 @@ $('#e-savelook').onclick=async()=>{
   const v={};for(const k in NEUTRAL){if(GRAIN_KEYS.includes(k))continue;v[k]=Array.isArray(E.rec[k])?E.rec[k].slice():E.rec[k]}
   const l={id:'u'+uid(),name,desc:'Custom look',v,custom:true};S.customLooks.push(l);store.set('customLooks',S.customLooks);
   E.lastCommit=clone(E.rec);E.rec.look=l.id;commit();renderEdUI();renderLooks();toast('Look saved');
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch{}
+  setTimeout(async()=>{if(await confirmSheet('Look saved on this device','To make sure you never lose your looks, save a backup copy to Files or iCloud now. It takes a second.','Save backup copy')){looksBackupFile()}},500);
 };
 (()=>{const t0=$('#e-tabs');const t=document.createElement('div');t.className='tabscroll';t0.appendChild(t);[['looks','looks','Looks'],['engine','engine','Engine'],['tone','tone','Tone'],['color','palette','Color'],['hsl','drop','HSL'],['texture','texture','Texture'],['crop','crop','Crop']].forEach(([p,i,l])=>{const b=document.createElement('button');b.className='t';b.setAttribute('role','tab');b.dataset.p=p;b.innerHTML=ic(i,24)+'<span>'+l+'</span>';b.onclick=()=>{E.panel=p;renderEdUI()};t.appendChild(b)});
   const f=document.createElement('button');f.className='fab';f.id='e-export';f.setAttribute('aria-label','Export');t0.appendChild(f);
@@ -2179,6 +2191,11 @@ function renderLooks(){
   draw($('#look-built'),sortFav(LOOKS));draw($('#look-custom'),sortFav(S.customLooks));
   $('#custom-h').style.display=$('#look-custom').style.display=S.customLooks.length?'':'none';
   if($('#custom-h').style.display==='')$('#custom-h').style.display='flex';
+  (()=>{const b=$('#lk-safe');if(!b)return;const n=S.customLooks.length,lb=S.set.lastBackup,old=!lb||(Date.now()-lb>3*864e5)||(S.set.lastBackupN||0)<n;
+    const standalone=window.matchMedia&&matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+    if(!n&&!lb){b.innerHTML=`<div style="margin:6px 14px 10px;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:var(--s1);display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font-size:12.5px;color:var(--mute);line-height:1.4">Lost your looks? Restore them from a backup file.</span><button class="chip" id="lk-rs" style="flex:none">Restore</button></div>`;$('#lk-rs').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{if(i.files[0])restoreLooksFile(i.files[0])};i.click()};return}
+    b.innerHTML=`<div style="margin:6px 14px 10px;padding:12px 14px;border:1px solid ${old?'rgba(230,208,160,.45)':'var(--line)'};border-radius:16px;background:var(--s1)"><div style="font-size:13.5px;font-weight:600;margin-bottom:4px">${old?'Back up your looks':'Looks backed up'}</div><div style="font-size:12.5px;color:var(--mute);line-height:1.45">${n} custom look${n===1?'':'s'} stored on this device${lb?' · last backup '+new Date(lb).toLocaleDateString():' · never backed up'}.${standalone?'':' Safari can erase website data after about 7 days without opening it, so add CAPTR to your Home Screen (Share, then Add to Home Screen) and keep a backup.'}</div><div style="display:flex;gap:8px;margin-top:10px"><button class="chip" id="lk-bk">Back up now</button><button class="chip" id="lk-rs">Restore from file</button></div></div>`;
+    $('#lk-bk').onclick=()=>looksBackupFile();$('#lk-rs').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{if(i.files[0])restoreLooksFile(i.files[0])};i.click()}})();
   const rm=$('#lk-rm');rm.textContent=S.lookSelecting?'Done':'Remove…';rm.onclick=()=>{S.lookSelecting=!S.lookSelecting;S.lookSel.clear();renderLooks()};
   let lb=$('#lk-bar');if(!lb){lb=document.createElement('div');lb.id='lk-bar';lb.className='lk-bar';$('#s-looks').appendChild(lb)}
   lb.style.display=S.lookSelecting?'flex':'none';
