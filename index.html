@@ -272,7 +272,7 @@ svg.i{stroke-width:1.65}
 #s-camera .finder-wrap{position:absolute;inset:0;padding:0;z-index:1}
 #s-camera .finder{border-radius:0}
 .cam-bottom{position:absolute;left:0;right:0;bottom:calc(var(--tabh) + var(--sab) + 22px);z-index:5;padding-top:64px;background:none;pointer-events:none}
-.cam-bottom button,.cam-bottom input,.cam-bottom [role=group],.cam-bottom .shots,.cam-bottom .pills{pointer-events:auto}
+.cam-bottom>*:not(.readout){pointer-events:auto}.cam-bottom button,.cam-bottom input{pointer-events:auto}
 .readout{padding:0 18px 6px;text-shadow:0 1px 6px #000,0 0 3px rgba(0,0,0,.6)}
 .shots{padding:2px 14px 4px;gap:10px}
 .shot{background:var(--glass);border:1px solid var(--line);border-radius:16px;height:52px}
