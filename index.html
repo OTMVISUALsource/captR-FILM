@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0b0b0c">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Chronograph Camy</title>
 <style>
 :root{
@@ -37,7 +38,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* camera */
 .finder-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 0 4px}
-.finder{position:relative;background:#000;overflow:hidden;max-width:100%;max-height:100%;width:100%;aspect-ratio:3/4;touch-action:none;border-radius:2px}
+.finder{position:relative;background:#000;overflow:hidden;flex:none;width:100%;height:100%;touch-action:none;border-radius:2px}
 .finder canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .finder canvas.mirror{transform:scaleX(-1)}
 .gridov{position:absolute;inset:0;pointer-events:none;display:none;background:
@@ -137,7 +138,7 @@ select{background:var(--s2);color:var(--tx);border:0;border-radius:8px;padding:8
 .ed-top{display:flex;align-items:center;gap:2px;padding:calc(var(--sat) + 4px) 6px 4px}
 .ed-top .sp{flex:1}
 .ed-stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:4px 0;touch-action:none;user-select:none;-webkit-user-select:none}
-.ed-stage canvas{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.ed-stage canvas{display:block;flex:none}
 .ed-tag{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#000b;padding:3px 12px;border-radius:12px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;display:none}
 .ed-tag.on{display:block}
 .ed-spin{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);background:var(--bg)}
@@ -179,6 +180,12 @@ select{background:var(--s2);color:var(--tx);border:0;border-radius:8px;padding:8
 .prog{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;margin:10px 0}
 .prog i{display:block;height:100%;width:30%;background:var(--acc);animation:slide 1s infinite linear}
 @keyframes slide{0%{margin-left:-30%}100%{margin-left:100%}}
+.shots{display:flex;gap:8px;justify-content:center;padding:4px 12px 2px}
+.shot{flex:1;max-width:92px;height:54px;border-radius:14px;background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1px solid transparent}
+.shot b{font-weight:500;font-size:17px;font-variant-numeric:tabular-nums}
+.shot small{font-size:9.5px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase}
+.shot.on{border-color:var(--acc);color:var(--acc)}.shot.on small{color:var(--acc)}
+.ar{display:inline-block;border:1.5px solid currentColor;border-radius:2px;flex:none}
 .hidden{display:none!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -205,13 +212,13 @@ select{background:var(--s2);color:var(--tx);border:0;border-radius:8px;padding:8
       </div>
     </div>
     <div class="readout mono" id="readout" aria-live="polite"><span id="ro-l">—</span><span id="ro-r">—</span></div>
+    <div class="shots" id="shots" role="group" aria-label="Lens and framing"></div>
     <div class="sub" id="sub"></div>
     <div class="strip" id="strip">
       <button class="chip" id="c-aspect" aria-pressed="false"></button>
       <button class="chip" id="c-timer" aria-pressed="false"></button>
       <button class="chip" id="c-look" aria-pressed="false"></button>
       <button class="chip" id="c-ev" aria-pressed="false"></button>
-      <button class="chip" id="c-zoom" aria-pressed="false" hidden></button>
     </div>
     <div class="rail">
       <button class="thumb-btn" id="b-last" aria-label="Open latest photo"></button>
@@ -348,21 +355,21 @@ const DB=(()=>{
   });
   const tx=(st,mode,fn)=>new Promise((res,rej)=>{const t=db.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)});
   return{open,get mem(){return useMem},
-    put:(st,v)=>useMem?(mem[st].set(v.id,v),Promise.resolve()):tx(st,'readwrite',s=>s.put(v)),
-    get:(st,id)=>useMem?Promise.resolve(mem[st].get(id)):tx(st,'readonly',s=>s.get(id)),
-    all:st=>useMem?Promise.resolve([...mem[st].values()]):tx(st,'readonly',s=>s.getAll()),
-    del:(st,id)=>useMem?(mem[st].delete(id),Promise.resolve()):tx(st,'readwrite',s=>s.delete(id))};
+    async put(st,v){mem[st].set(v.id,v);if(useMem)return;try{await tx(st,'readwrite',s=>s.put(v));mem[st].delete(v.id)}catch(e){}},
+    async get(st,id){const m=mem[st].get(id);if(m)return m;return useMem?undefined:tx(st,'readonly',s=>s.get(id))},
+    async all(st){const a=useMem?[]:await tx(st,'readonly',s=>s.getAll()).catch(()=>[]);const ids=new Set(a.map(x=>x.id));for(const v of mem[st].values())if(!ids.has(v.id))a.push(v);return a},
+    async del(st,id){mem[st].delete(id);if(!useMem)try{await tx(st,'readwrite',s=>s.delete(id))}catch{}}};
 })();
 
 /* ---------- recipe + looks ---------- */
-const NEUTRAL={ev:0,contrast:0,highlights:0,shadows:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:0,split:0,sS:[.5,.5,.5],sH:[.5,.5,.5],sharp:.15,grain:0,grainSize:1,grainPx:false,vig:0,hal:0,halRad:1,halThr:.7};
+const NEUTRAL={ev:0,contrast:0,highlights:0,shadows:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:0,split:0,sS:[.5,.5,.5],sH:[.5,.5,.5],pivot:.5,sharp:.15,grain:0,grainSize:1,grainPx:false,vig:0,hal:0,halRad:1,halThr:.7};
 const LOOKS=[
 {id:'neutral',name:'Camy Neutral',desc:'Balanced, natural, dependable baseline.',v:{}},
-{id:'golden',name:'Golden Hour',desc:'Warm highlights, gentle contrast, natural skin.',v:{temp:.22,tint:.03,contrast:.14,highlights:-.12,shadows:.12,vib:.18,sat:.04,split:.5,sS:[.5,.47,.45],sH:[.62,.54,.42],grain:.1,vig:.14}},
-{id:'night',name:'City Night',desc:'Controlled saturated lights, deep but detailed shadows.',v:{ev:-.1,contrast:.28,shadows:.3,highlights:-.15,sat:.12,vib:.2,temp:-.08,split:.55,sS:[.42,.5,.6],sH:[.58,.5,.46],hal:.35,vig:.22,grain:.12}},
-{id:'negative',name:'Soft Negative',desc:'Muted color, gentle contrast, restrained grain.',v:{contrast:-.12,sat:-.22,fade:.45,temp:.05,shadows:.12,highlights:-.1,split:.4,sS:[.46,.52,.5],sH:[.56,.52,.46],grain:.32,vig:.1}},
-{id:'portrait',name:'Portrait Soft',desc:'Subtle contrast, natural skin rendering, soft highlights.',v:{contrast:-.06,highlights:-.2,shadows:.12,vib:.1,sat:-.04,temp:.07,hal:.14,sharp:0,grain:.06}},
-{id:'mono',name:'Monochrome',desc:'Shaped black-and-white tonal response.',v:{mono:1,contrast:.3,highlights:-.1,shadows:.1,grain:.26,vig:.2,fade:.1}}
+{id:'golden',name:'Golden Hour',desc:'Warm highlights, gentle contrast, natural skin.',v:{temp:.22,tint:.03,contrast:.42,highlights:-.12,shadows:.12,vib:.18,sat:.04,split:.5,sS:[.5,.47,.45],sH:[.62,.54,.42],grain:.1,vig:.14}},
+{id:'night',name:'City Night',desc:'Controlled saturated lights, deep but detailed shadows.',v:{ev:-.1,contrast:.84,shadows:.3,highlights:-.15,sat:.12,vib:.2,temp:-.08,split:.55,sS:[.42,.5,.6],sH:[.58,.5,.46],hal:.35,vig:.22,grain:.12}},
+{id:'negative',name:'Soft Negative',desc:'Muted color, gentle contrast, restrained grain.',v:{contrast:-.36,sat:-.22,fade:.45,temp:.05,shadows:.12,highlights:-.1,split:.4,sS:[.46,.52,.5],sH:[.56,.52,.46],grain:.32,vig:.1}},
+{id:'portrait',name:'Portrait Soft',desc:'Subtle contrast, natural skin rendering, soft highlights.',v:{contrast:-.18,highlights:-.2,shadows:.12,vib:.1,sat:-.04,temp:.07,hal:.14,sharp:0,grain:.06}},
+{id:'mono',name:'Monochrome',desc:'Shaped black-and-white tonal response.',v:{mono:1,contrast:.9,highlights:-.1,shadows:.1,grain:.26,vig:.2,fade:.1}}
 ];
 const S={ // app state
   tab:'camera',
@@ -371,30 +378,37 @@ const S={ // app state
   customLooks:store.get('customLooks',[]),
   aspect:store.get('aspect','orig'),
   timer:0, camEv:0, grid:store.get('grid',false),
-  set:Object.assign({haptics:true,fullres:true,quality:.92,size:'full'},store.get('settings',{})),
+  set:Object.assign({haptics:true,hires:true,fullres:true,quality:.92,size:'full'},store.get('settings',{})),
   clip:null, lib:[], filter:'all', sort:'new', view:'grid', selecting:false, picked:new Set(),
   urls:[]
 };
 const allLooks=()=>LOOKS.concat(S.customLooks);
 const getLook=id=>allLooks().find(l=>l.id===id)||LOOKS[0];
 const lookValues=id=>{const l=getLook(id);const o={};for(const k in NEUTRAL){const v=l.v[k]!==undefined?l.v[k]:NEUTRAL[k];o[k]=Array.isArray(v)?v.slice():v}return o};
-const newRecipe=(id,extra)=>Object.assign({v:1,look:id,aspect:'orig',rot:0},lookValues(id),extra||{});
+const newRecipe=(id,extra)=>Object.assign({v:1,look:id,aspect:'orig',rot:0,zoom:1},lookValues(id),extra||{});
 const haptic=(ms=10)=>{if(S.set.haptics&&navigator.vibrate)try{navigator.vibrate(ms)}catch{}};
 const saveSet=()=>store.set('settings',S.set);
 
-/* ---------- WebGL renderer ---------- */
-const VS='attribute vec2 p;varying vec2 vUv;void main(){vUv=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}';
-const FS=`precision highp float;varying vec2 vUv;uniform sampler2D uTex;uniform vec4 uCrop;uniform float uRot;uniform vec2 uOut;uniform float uSeed,uBypass;
-uniform float uEv,uCon,uHi,uSh,uFade,uTemp,uTint,uSat,uVib,uMono,uSplit,uSharp,uGrain,uVig,uHal,uGSize,uGPx,uHRad,uHThr;uniform vec3 uSS,uSH;
+/* ---------- WebGL2 renderer ---------- */
+const VS=`#version 300 es
+in vec2 p;out vec2 vUv;void main(){vUv=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}`;
+const FS=`#version 300 es
+precision highp float;precision highp sampler2D;
+in vec2 vUv;out vec4 oc;
+uniform sampler2D uTex;uniform vec4 uCrop;uniform float uRot;uniform vec2 uOut;uniform float uSeed,uBypass;
+uniform float uEv,uCon,uPiv,uHi,uSh,uFade,uTemp,uTint,uSat,uVib,uMono,uSplit,uSharp,uGrain,uVig,uHal,uGSize,uGPx,uHRad,uHThr,uHLod;
+uniform vec3 uSS,uSH;
 vec2 srcUV(vec2 uv){vec2 p=uCrop.xy+uv*uCrop.zw;
  if(uRot<.5)return p; if(uRot<1.5)return vec2(p.y,1.-p.x); if(uRot<2.5)return vec2(1.-p.x,1.-p.y); return vec2(1.-p.y,p.x);}
-vec3 tap(vec2 uv){return texture2D(uTex,srcUV(clamp(uv,0.,1.))).rgb;}
-float h(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+vec3 tap(vec2 uv){return texture(uTex,srcUV(clamp(uv,0.,1.))).rgb;}
+vec3 tapL(vec2 uv,float l){return textureLod(uTex,srcUV(clamp(uv,0.,1.)),l).rgb;}
+float h(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
 float lum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}
+vec3 scurve(vec3 x,float p,float k){x=clamp(x,0.,1.);vec3 lo=p*pow(x/p,vec3(k));vec3 hi=1.-(1.-p)*pow((1.-x)/(1.-p),vec3(k));return mix(hi,lo,step(x,vec3(p)));}
 void main(){
  vec2 px=1./uOut; vec3 c=tap(vUv);
- if(uBypass>.5){gl_FragColor=vec4(c,1.);return;}
+ if(uBypass>.5){oc=vec4(c,1.);return;}
  if(uSharp>0.){vec3 b=(tap(vUv+vec2(px.x,0.))+tap(vUv-vec2(px.x,0.))+tap(vUv+vec2(0.,px.y))+tap(vUv-vec2(0.,px.y)))*.25;c+=(c-b)*uSharp*1.4;}
  c=clamp(c,0.,1.);
  vec3 lin=pow(c,vec3(2.2))*exp2(uEv);
@@ -405,7 +419,7 @@ void main(){
  float hm=smoothstep(.45,1.,l),sm=1.-smoothstep(0.,.55,l);
  g*=1.+uHi*.45*hm; g*=1.+uSh*.55*sm; g+=uSh*.06*sm*(1.-g);
  g=clamp(g,0.,1.);
- if(uCon>=0.){g=mix(g,g*g*(3.-2.*g),uCon);}else{g=(g-.5)*(1.+uCon*.6)+.5;}
+ g=scurve(g,clamp(uPiv,.05,.95),exp(uCon*.5));
  g=uFade*.18+g*(1.-uFade*.18);
  l=lum(g);
  float mx=max(g.r,max(g.g,g.b)),mn=min(g.r,min(g.g,g.b));
@@ -416,28 +430,38 @@ void main(){
  l=lum(g);
  float s2=1.-smoothstep(0.,.5,l),h2=smoothstep(.5,1.,l);
  g+=(uSS-.5)*uSplit*.35*s2+(uSH-.5)*uSplit*.35*h2;
- if(uHal>0.){vec3 acc=vec3(0.);vec2 rr=vec2(.016*uOut.y/uOut.x,.016)*uHRad;
-  for(int i=0;i<8;i++){float a=float(i)*.7854;vec2 d=vec2(cos(a),sin(a));
-   vec3 s1=tap(vUv+d*rr),s2=tap(vUv+d*rr*2.2);
-   acc+=max(lum(s1)-uHThr,0.)/(1.-uHThr)*vec3(1.,.42,.22)+max(lum(s2)-uHThr,0.)/(1.-uHThr)*vec3(1.,.35,.2)*.7;}
-  g+=acc/16.*uHal*1.3;}
+ if(uHal>0.){
+  float ru=.03*uHRad; vec2 rr=vec2(ru*uOut.y/uOut.x,ru);
+  vec3 acc=tapL(vUv,uHLod+1.);acc=max(acc-uHThr,0.)/(1.-uHThr);float ws=1.;
+  for(int i=0;i<12;i++){float a=float(i)*.5236+.26;vec2 d=vec2(cos(a),sin(a));
+   vec3 s1=max(tapL(vUv+d*rr*.55,uHLod)-uHThr,0.)/(1.-uHThr);
+   vec3 s2b=max(tapL(vUv+d*rr*1.2,uHLod+.5)-uHThr,0.)/(1.-uHThr);
+   acc+=s1*1.2+s2b*.8;ws+=2.;}
+  vec3 hl=acc/ws; float hv=lum(hl);
+  vec3 halo=mix(vec3(hv),hl,.5)*vec3(1.,.5,.32);
+  g=1.-(1.-g)*(1.-clamp(halo*uHal*3.2,0.,1.));
+ }
  float d=length((vUv-.5)*vec2(1.25,1.25)); g*=1.-uVig*smoothstep(.28,.88,d)*.75;
- if(uGrain>0.){float gs=(uGPx>.5?1.:max(1.,max(uOut.x,uOut.y)/1300.)*1.1)*uGSize;vec2 p=vUv*uOut/gs+uSeed*vec2(37.,91.);
-  float n=(vn(p)+.5*vn(p*2.13+7.))/1.5-.5; float lw=1.-pow(abs(l-.5)*2.,2.)*.8; g+=n*uGrain*.38*lw;}
- gl_FragColor=vec4(clamp(g,0.,1.),1.);
+ if(uGrain>0.){
+  float gs=(uGPx>.5?1.:max(1.5,max(uOut.x,uOut.y)/900.))*uGSize;
+  vec2 p=vUv*uOut/gs+uSeed*vec2(17.3,31.7);
+  float n=(vn(p)+vn(p*.5+11.))-1.;
+  float lw=1.-pow(abs(l-.5)*2.,2.)*.8; g+=n*uGrain*.16*lw;}
+ oc=vec4(clamp(g,0.,1.),1.);
 }`;
-const ASPECTS={orig:null,'3:2':3/2,'4:3':4/3,'1:1':1,'16:9':16/9};
-function cropFor(aspect,rot,sw,sh){
-  const odd=rot%2===1, rw=odd?sh:sw, rh=odd?sw:sh, sa=rw/rh; let r=sa;
-  const b=ASPECTS[aspect]; if(b) r=(b===1)?1:(rh>rw?1/b:b);
-  let ox=0,oy=0,cx=1,cy=1; if(sa>r){cx=r/sa;ox=(1-cx)/2}else if(sa<r){cy=sa/r;oy=(1-cy)/2}
-  return{r,ox,oy,cx,cy,pw:cx*rw,ph:cy*rh};
+const ASPECTS={orig:null,'2.39':2.39,'2:1':2,'1.85':1.85,'16:9':16/9,'3:2':3/2,'4:3':4/3,'1:1':1,'4:5':4/5,'2:3':2/3,'9:16':9/16};
+const ASPECT_LIST=[['orig','Full'],['2.39','2.39:1 Scope'],['2:1','2:1'],['1.85','1.85:1'],['16:9','16:9'],['3:2','3:2'],['4:3','4:3'],['1:1','1:1'],['4:5','4:5'],['2:3','2:3'],['9:16','9:16']];
+function cropFor(aspect,rot,sw,sh,zoom=1){
+  const odd=rot%2===1, rw=odd?sh:sw, rh=odd?sw:sh, sa=rw/rh, r=ASPECTS[aspect]||sa;
+  let cx=1,cy=1; if(sa>r)cx=r/sa; else if(sa<r)cy=sa/r;
+  cx/=zoom;cy/=zoom;
+  return{r,ox:(1-cx)/2,oy:(1-cy)/2,cx,cy,pw:cx*rw,ph:cy*rh};
 }
 class Renderer{
   constructor(canvas){
-    this.c=canvas; const gl=this.gl=canvas.getContext('webgl',{premultipliedAlpha:false,preserveDrawingBuffer:true,antialias:false,alpha:false});
-    if(!gl)throw new Error('WebGL unavailable');
-    const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(sh));return sh};
+    this.c=canvas; const gl=this.gl=canvas.getContext('webgl2',{premultipliedAlpha:false,preserveDrawingBuffer:true,antialias:false,alpha:false});
+    if(!gl)throw new Error('WebGL2 unavailable');
+    const mk=(t,src)=>{const sh=gl.createShader(t);gl.shaderSource(sh,src);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(sh));return sh};
     const pr=this.pr=gl.createProgram();gl.attachShader(pr,mk(gl.VERTEX_SHADER,VS));gl.attachShader(pr,mk(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);
     if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pr));
     gl.useProgram(pr);
@@ -445,21 +469,22 @@ class Renderer{
     const a=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);
     this.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.tex);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-    this.U={};for(const n of ['uTex','uCrop','uRot','uOut','uSeed','uBypass','uEv','uCon','uHi','uSh','uFade','uTemp','uTint','uSat','uVib','uMono','uSplit','uSharp','uGrain','uVig','uHal','uSS','uSH','uGSize','uGPx','uHRad','uHThr'])this.U[n]=gl.getUniformLocation(pr,n);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    this.U={};for(const n of ['uTex','uCrop','uRot','uOut','uSeed','uBypass','uEv','uCon','uPiv','uHi','uSh','uFade','uTemp','uTint','uSat','uVib','uMono','uSplit','uSharp','uGrain','uVig','uHal','uSS','uSH','uGSize','uGPx','uHRad','uHThr','uHLod'])this.U[n]=gl.getUniformLocation(pr,n);
     this.maxTex=gl.getParameter(gl.MAX_TEXTURE_SIZE);this.sw=0;this.sh=0;
   }
-  setSource(src,w,h){const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);this.sw=w;this.sh=h}
+  setSource(src,w,h){const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);gl.generateMipmap(gl.TEXTURE_2D);this.sw=w;this.sh=h}
   render(r,ow,oh,bypass=false,seed=1){
     const gl=this.gl,U=this.U;ow=Math.max(1,Math.round(ow));oh=Math.max(1,Math.round(oh));
     if(this.c.width!==ow||this.c.height!==oh){this.c.width=ow;this.c.height=oh}
     gl.viewport(0,0,ow,oh);
-    const cr=cropFor(r.aspect,r.rot||0,this.sw,this.sh);
+    const cr=cropFor(r.aspect,r.rot||0,this.sw,this.sh,r.zoom||1);
+    const lod=Math.max(0,Math.log2(Math.max(1,.03*(r.halRad??1)*cr.ph/3)));
     gl.uniform1i(U.uTex,0);gl.uniform4f(U.uCrop,cr.ox,cr.oy,cr.cx,cr.cy);gl.uniform1f(U.uRot,r.rot||0);gl.uniform2f(U.uOut,ow,oh);gl.uniform1f(U.uSeed,seed);gl.uniform1f(U.uBypass,bypass?1:0);
-    gl.uniform1f(U.uEv,r.ev);gl.uniform1f(U.uCon,r.contrast);gl.uniform1f(U.uHi,r.highlights);gl.uniform1f(U.uSh,r.shadows);gl.uniform1f(U.uFade,r.fade);
+    gl.uniform1f(U.uEv,r.ev);gl.uniform1f(U.uCon,r.contrast);gl.uniform1f(U.uPiv,r.pivot??.5);gl.uniform1f(U.uHi,r.highlights);gl.uniform1f(U.uSh,r.shadows);gl.uniform1f(U.uFade,r.fade);
     gl.uniform1f(U.uTemp,r.temp);gl.uniform1f(U.uTint,r.tint);gl.uniform1f(U.uSat,r.sat);gl.uniform1f(U.uVib,r.vib);gl.uniform1f(U.uMono,r.mono);gl.uniform1f(U.uSplit,r.split);
     gl.uniform1f(U.uSharp,r.sharp);gl.uniform1f(U.uGrain,r.grain);gl.uniform1f(U.uVig,r.vig);gl.uniform1f(U.uHal,r.hal);
-    gl.uniform1f(U.uGSize,r.grainSize??1);gl.uniform1f(U.uGPx,r.grainPx?1:0);gl.uniform1f(U.uHRad,r.halRad??1);gl.uniform1f(U.uHThr,r.halThr??.7);
+    gl.uniform1f(U.uGSize,r.grainSize??1);gl.uniform1f(U.uGPx,r.grainPx?1:0);gl.uniform1f(U.uHRad,r.halRad??1);gl.uniform1f(U.uHThr,Math.min(.95,r.halThr??.7));gl.uniform1f(U.uHLod,lod);
     gl.uniform3fv(U.uSS,r.sS);gl.uniform3fv(U.uSH,r.sH);
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
     return cr;
@@ -480,18 +505,20 @@ function promptSheet(title,val,okLabel){return new Promise(res=>{
     const i=$('#pin',sh);setTimeout(()=>i.focus(),50);
     $$('button',sh).forEach(b=>b.onclick=()=>{closeSheet();res(b.dataset.r==='1'&&i.value.trim()?i.value.trim():null)});})})}
 function loadImage(blob){return new Promise((res,rej)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>res({img:im,url:u});im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('decode'))};im.src=u})}
-const canvasBlob=(c,q)=>new Promise(r=>c.toBlob(r,'image/jpeg',q));
+const canvasBlob=(c,q)=>new Promise((res,rej)=>{try{c.toBlob(b=>{if(b)res(b);else{try{fetch(c.toDataURL('image/jpeg',q)).then(r=>r.blob()).then(res,rej)}catch(e){rej(e)}}},'image/jpeg',q)}catch(e){rej(e)}});
+async function glBlob(R,q){const c=document.createElement('canvas');c.width=R.c.width;c.height=R.c.height;c.getContext('2d').drawImage(R.c,0,0);const b=await canvasBlob(c,q);c.width=c.height=1;return b}
 const fmtBytes=b=>b>1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';
 const fmtDate=t=>new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'});
 function scaledCanvas(img,max){const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,k=Math.min(1,max/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c}
 async function makeThumb(img,recipe){
-  const src=scaledCanvas(img,600),R=getThumbR();R.setSource(src,src.width,src.height);
-  const cr=cropFor(recipe.aspect,recipe.rot||0,src.width,src.height);const [w,h]=fitSize(cr.r,420);R.render(recipe,w,h,false,3);return canvasBlob(R.c,.8);
+  try{const src=scaledCanvas(img,600),R=getThumbR();R.setSource(src,src.width,src.height);
+    const cr=cropFor(recipe.aspect,recipe.rot||0,src.width,src.height,recipe.zoom||1);const [w,h]=fitSize(cr.r,420);R.render(recipe,w,h,false,3);return await glBlob(R,.8)}
+  catch(e){return canvasBlob(scaledCanvas(img,420),.8)}
 }
 
 /* ---------- camera ---------- */
 const video=document.createElement('video');video.playsInline=true;video.muted=true;video.setAttribute('playsinline','');
-const cam={stream:null,track:null,caps:{},st:{},ic:null,photoCaps:null,facing:store.get('facing','environment'),deviceId:null,devices:[],torch:false,flash:false,renderer:null,busy:false,timerId:null,focusWarned:false,zoom:1,ev:0,state:'idle'};
+const cam={dzoom:1,pendingZoom:null,stream:null,track:null,caps:{},st:{},ic:null,photoCaps:null,facing:store.get('facing','environment'),deviceId:null,devices:[],torch:false,flash:false,renderer:null,busy:false,timerId:null,focusWarned:false,zoom:1,ev:0,state:'idle'};
 const camCanvas=$('#camCanvas'),finder=$('#finder');
 try{cam.renderer=new Renderer(camCanvas)}catch(e){cam.noGL=true}
 
@@ -534,6 +561,7 @@ async function startCamera(){
     cam.track.addEventListener('mute',()=>{$('#ro-l').textContent='Camera interrupted…'});
     cam.track.addEventListener('unmute',()=>updateReadout());
     cam.state='live';setGate(null);updateCamUI();
+    if(cam.pendingZoom&&cam.caps.zoom){const z=cam.pendingZoom;cam.pendingZoom=null;try{await applyCam({zoom:z});cam.zoom=z;updateCamUI()}catch{}}
   }catch(e){
     cam.state='error';
     if(e.name==='NotAllowedError'||e.name==='SecurityError')setGate('denied');
@@ -545,7 +573,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden){if(cam.stream&&S.tab==='camera')stopCamera()}
   else if(S.tab==='camera'&&store.get('onboarded',false)&&cam.state==='idle')startCamera();
 });
-function camRecipe(){const r=newRecipe(S.camLook,{aspect:S.aspect});if(!cam.caps.exposureCompensation)r.ev+=cam.ev;return r}
+function camRecipe(){const r=newRecipe(S.camLook,{aspect:S.aspect,zoom:cam.dzoom||1});if(!cam.caps.exposureCompensation)r.ev+=cam.ev;return r}
 function updateReadout(){
   const lens=(cam.track&&cam.track.label)||'Camera';
   $('#ro-l').textContent=cam.state==='live'?lens.replace(/\s*\(.*\)$/,'')+(cam.facing==='user'?' · front':''):'—';
@@ -557,13 +585,13 @@ function updateCamUI(){
   const fb=$('#b-flash'),canTorch=!!cam.caps.torch,canFlash=!!(cam.photoCaps&&cam.photoCaps.fillLightMode&&cam.photoCaps.fillLightMode.includes('flash'));
   if(canTorch||canFlash){fb.hidden=false;const on=canTorch?cam.torch:cam.flash;fb.innerHTML=ic(on?'bolt':'boltoff');fb.setAttribute('aria-pressed',on);fb.setAttribute('aria-label',canTorch?(on?'Torch on':'Torch off'):(on?'Flash on':'Flash off'))}else fb.hidden=true;
   const useFull=S.set.fullres&&cam.ic&&typeof cam.ic.takePhoto==='function';
-  $('#b-fmt').textContent=useFull?'JPEG · FULL-RES':'JPEG · FRAME';
-  $('#c-aspect').innerHTML=ic('aspect',16)+(S.aspect==='orig'?'Full':S.aspect);
+  $('#b-fmt').textContent=useFull?'JPEG · FULL-RES':(S.set.hires?'JPEG · 4K FRAME':'JPEG · FRAME');
+  $('#c-aspect').innerHTML=ic('aspect',16)+(ASPECT_LIST.find(a=>a[0]===S.aspect)||['','Full'])[1].replace(' Scope','');
   $('#c-timer').innerHTML=ic('timer',16)+(S.timer?S.timer+'s':'Off');
   $('#c-look').innerHTML=ic('looks',16)+getLook(S.camLook).name;
   const hw=!!cam.caps.exposureCompensation;
   $('#c-ev').textContent='EV '+(cam.ev>=0?'+':'')+cam.ev.toFixed(1)+(hw?'':' · digital');
-  const zc=$('#c-zoom');zc.hidden=!cam.caps.zoom;if(cam.caps.zoom)zc.textContent=(cam.zoom||1).toFixed(1)+'×';
+  renderShots();
   $('#gridov').classList.toggle('on',S.grid);$('#b-grid').setAttribute('aria-pressed',S.grid);
   const th=S.lib.slice().sort((a,b)=>b.date-a.date)[0];
   const lb=$('#b-last');if(th&&th.thumbUrl){lb.style.backgroundImage=`url(${th.thumbUrl})`;lb.innerHTML=''}else{lb.style.backgroundImage='';lb.innerHTML=ic('images')}
@@ -574,12 +602,49 @@ function camLoop(){
   requestAnimationFrame(camLoop);
   if(cam.state!=='live'||S.tab!=='camera'||document.hidden||!cam.renderer||video.readyState<2||!video.videoWidth)return;
   const vw=video.videoWidth,vh=video.videoHeight,rec=camRecipe();
-  const cr=cropFor(rec.aspect,0,vw,vh);
-  const key=cr.r.toFixed(4);if(key!==lastCamSize){lastCamSize=key;finder.style.aspectRatio=cr.r}
+  const cr=cropFor(rec.aspect,0,vw,vh,1);
+  const wrap=finder.parentElement,W=wrap.clientWidth,H=wrap.clientHeight;
+  const key=cr.r.toFixed(4)+'|'+W+'|'+H;
+  if(key!==lastCamSize){lastCamSize=key;let w=W,h=W/cr.r;if(h>H){h=H;w=H*cr.r}finder.style.width=Math.floor(w)+'px';finder.style.height=Math.floor(h)+'px'}
   const cw=finder.clientWidth,ch=finder.clientHeight;if(!cw||!ch)return;
-  const dpr=Math.min(devicePixelRatio||1,2),k=Math.min(1,1280/Math.max(cw*dpr,ch*dpr));
+  const dpr=Math.min(devicePixelRatio||1,3),k=Math.min(1,1600/Math.max(cw*dpr,ch*dpr));
   camCanvas.classList.toggle('mirror',cam.facing==='user');
-  try{cam.renderer.setSource(video,vw,vh);cam.renderer.render(rec,cw*dpr*k,ch*dpr*k,false,(performance.now()/40|0)%97)}catch(e){}
+  try{cam.renderer.setSource(video,vw,vh);cam.renderer.render(rec,cw*dpr*k,ch*dpr*k,false,(performance.now()/90|0)%97)}catch(e){}
+}
+function shotList(){
+  const z=cam.caps.zoom,ultra=cam.devices.find(d=>/back|rear/i.test(d.label)&&/ultra/i.test(d.label));
+  if(z){
+    const L=[];
+    if(z.min<=.55)L.push({v:.5,name:'Ultra',m:'hw'});else if(ultra)L.push({v:.5,name:'Ultra',m:'dev'});
+    const vals=[1,2,3,5,10].filter(v=>v>=Math.max(1,z.min)-.01&&v<=z.max+.01),want=4-L.length;
+    let pick=vals;
+    if(vals.length>want){pick=[];for(let k=0;k<want;k++)pick.push(vals[Math.round(k*(vals.length-1)/Math.max(1,want-1))])}
+    [...new Set(pick)].forEach(v=>L.push({v,name:v<=1.01?'Wide':v<=2.5?'Close':v<=5?'Tight':'Tele',m:'hw'}));
+    if(L.length>=4)return L.slice(0,4);
+  }
+  return[{v:1,name:'Wide',m:'dig'},{v:1.5,name:'Medium',m:'dig'},{v:2.5,name:'Close',m:'dig'},{v:4,name:'Tight',m:'dig'}];
+}
+function renderShots(){
+  const host=$('#shots');if(!host)return;if(cam.state!=='live'){host.innerHTML='';return}
+  const L=shotList(),onUltra=/ultra/i.test((cam.track&&cam.track.label)||'');host.innerHTML='';
+  L.forEach(sh=>{
+    const b=document.createElement('button');b.className='shot';
+    const on=sh.m==='dig'?Math.abs((cam.dzoom||1)-sh.v)<.06:sh.m==='dev'?onUltra:(sh.v===.5?(onUltra||(cam.zoom||1)<.6):(!onUltra&&Math.abs((cam.zoom||1)-sh.v)<.08));
+    if(on)b.classList.add('on');
+    b.setAttribute('aria-label',`${sh.name} ${sh.v} times${sh.m==='dig'?' (digital crop)':''}`);
+    b.innerHTML=`<b>${sh.v}×</b><small>${sh.name}</small>`;b.onclick=()=>pickShot(sh);host.appendChild(b);
+  });
+}
+async function pickShot(sh){
+  haptic(8);const ultra=cam.devices.find(d=>/back|rear/i.test(d.label)&&/ultra/i.test(d.label));
+  if(sh.m==='dig'){cam.dzoom=sh.v;updateCamUI();return}
+  cam.dzoom=1;
+  if(sh.m==='dev'&&ultra){cam.deviceId=ultra.deviceId;cam.facing='environment';await startCamera();return}
+  if(sh.m==='hw'){
+    if(cam.deviceId&&sh.v>=1){cam.deviceId=null;cam.facing='environment';cam.pendingZoom=sh.v;await startCamera();return}
+    try{await applyCam({zoom:sh.v});cam.zoom=sh.v}catch{toast('This camera didn’t accept that zoom')}
+  }
+  updateCamUI();
 }
 function applyCam(adv){if(!cam.track)return Promise.reject();return cam.track.applyConstraints({advanced:[adv]})}
 $('#b-flash').onclick=async()=>{
@@ -605,7 +670,10 @@ function setSub(kind){
   if(!subOpen){sub.style.display='none';return}
   sub.style.display='flex';$('#c-'+subOpen).setAttribute('aria-pressed','true');
   const pill=(label,on,fn)=>{const b=document.createElement('button');b.className='chip'+(on?' on':'');b.textContent=label;b.onclick=()=>{fn();haptic(6);updateCamUI();setSub(subOpen);setSub(kind)};sub.appendChild(b)};
-  if(kind==='aspect')[['orig','Full'],['3:2','3:2'],['4:3','4:3'],['1:1','1:1'],['16:9','16:9']].forEach(([k,l])=>pill(l,S.aspect===k,()=>{S.aspect=k;store.set('aspect',k)}));
+  if(kind==='aspect'){ASPECT_LIST.forEach(([k,l])=>{const b=document.createElement('button');b.className='chip'+(S.aspect===k?' on':'');
+    const r=ASPECTS[k]||(video.videoWidth/video.videoHeight||1.78);const w=r>=1?22:Math.round(22*r),h=r>=1?Math.round(22/r):22;
+    b.innerHTML=`<i class="ar" style="width:${w}px;height:${h}px"></i>${l}`;b.onclick=()=>{S.aspect=k;store.set('aspect',k);haptic(6);updateCamUI();setSub(subOpen);setSub('aspect');
+      if(ASPECTS[k]&&ASPECTS[k]>1.7&&video.videoHeight>video.videoWidth&&!S.warnedRot){S.warnedRot=true;toast('Turn your iPhone sideways for full-resolution cinematic frames',3600)}};sub.appendChild(b)})}
   if(kind==='timer')[0,3,10].forEach(t=>pill(t?t+' s':'Off',S.timer===t,()=>{S.timer=t}));
   if(kind==='look')allLooks().forEach(l=>pill(l.name,S.camLook===l.id,()=>{S.camLook=l.id;store.set('camLook',l.id);renderLooks()}));
   if(kind==='ev'){
@@ -615,12 +683,8 @@ function setSub(kind){
     r.oninput=async()=>{cam.ev=+r.value;paint();if(hw){try{await applyCam({exposureCompensation:cam.ev})}catch{}}updateCamUI()};
     $('#evz').onclick=()=>{r.value=0;r.oninput()};
   }
-  if(kind==='zoom'&&cam.caps.zoom){
-    const z=cam.caps.zoom,steps=[.5,1,2,3,5,10].filter(s=>s>=z.min-.01&&s<=z.max+.01);if(!steps.includes(z.min)&&z.min<1)steps.unshift(z.min);
-    steps.forEach(s=>pill(s+'×',Math.abs(cam.zoom-s)<.05,async()=>{cam.zoom=s;try{await applyCam({zoom:s})}catch{toast('Zoom failed')}}));
-  }
 };
-['aspect','timer','look','ev','zoom'].forEach(k=>$('#c-'+k).onclick=()=>setSub(k));
+['aspect','timer','look','ev'].forEach(k=>$('#c-'+k).onclick=()=>setSub(k));
 $('#sub').style.display='none';
 
 // tap to focus + pinch zoom
@@ -637,18 +701,24 @@ const endPtr=e=>{const was=ptrs.size;ptrs.delete(e.pointerId);
   if(was===1&&tapStart&&Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y)<10&&performance.now()-tapStart.t<500)tapFocus(e);
   if(ptrs.size<2)pinch0=null;if(!ptrs.size)tapStart=null};
 finder.addEventListener('pointerup',endPtr);finder.addEventListener('pointercancel',endPtr);
+async function nudgeFocus(){
+  const c=cam.caps;
+  try{if(c.focusMode&&c.focusMode.includes('continuous')){try{await applyCam({focusMode:'single-shot'})}catch{}await applyCam({focusMode:'continuous'});return true}}catch{}
+  try{if(c.zoom){const z=cam.zoom||c.zoom.min||1,d=z<c.zoom.max?.015:-.015;await applyCam({zoom:z+d});await applyCam({zoom:z});return true}}catch{}
+  return false;
+}
 async function tapFocus(e){
-  const can=cam.caps.focusMode&&cam.caps.focusMode.length>1||cam.caps.pointsOfInterest;
-  if(!can){if(!cam.focusWarned){cam.focusWarned=true;toast("This browser/camera doesn't expose tap-to-focus. Autofocus is automatic.")}return}
   const rc=finder.getBoundingClientRect();let x=(e.clientX-rc.left)/rc.width,y=(e.clientY-rc.top)/rc.height;
-  const rt=$('#reticle');rt.style.left=(x*100)+'%';rt.style.top=(y*100)+'%';rt.classList.remove('show','fade');void rt.offsetWidth;rt.classList.add('show');setTimeout(()=>rt.classList.add('fade'),50);
+  const rt=$('#reticle');rt.style.left=(x*100)+'%';rt.style.top=(y*100)+'%';rt.classList.remove('show','fade');void rt.offsetWidth;rt.classList.add('show');setTimeout(()=>rt.classList.add('fade'),50);haptic(12);
   if(cam.facing==='user')x=1-x;
-  const cr=cropFor(S.aspect,0,video.videoWidth,video.videoHeight);x=cr.ox+x*cr.cx;y=cr.oy+y*cr.cy;
-  try{
-    const adv={pointsOfInterest:[{x,y}]};if(cam.caps.focusMode&&cam.caps.focusMode.includes('single-shot'))adv.focusMode='single-shot';
-    if(cam.caps.exposureMode&&cam.caps.exposureMode.includes('single-shot'))adv.exposureMode='single-shot';
-    await applyCam(adv);haptic(12);
-  }catch{if(!cam.focusWarned){cam.focusWarned=true;toast('Focus point not supported on this camera')}}
+  const cr=cropFor(S.aspect,0,video.videoWidth,video.videoHeight,cam.dzoom||1);x=cr.ox+x*cr.cx;y=cr.oy+y*cr.cy;
+  const c=cam.caps;let ok=false;
+  if(c.pointsOfInterest||(c.focusMode&&c.focusMode.includes('single-shot'))){
+    try{const adv={pointsOfInterest:[{x,y}]};if(c.focusMode&&c.focusMode.includes('single-shot'))adv.focusMode='single-shot';
+      if(c.exposureMode&&c.exposureMode.includes('single-shot'))adv.exposureMode='single-shot';await applyCam(adv);ok=true}catch{}
+  }
+  if(!ok){ok=await nudgeFocus();
+    if(!cam.focusWarned){cam.focusWarned=true;toast('iPhone Safari doesn’t let websites choose a focus point, so Camy re-triggers autofocus on every tap.',4200)}}
 }
 
 // capture
@@ -659,7 +729,19 @@ $('#b-shutter').onclick=()=>{
   let n=S.timer;const cd=$('#countdown');cd.textContent=n;cd.classList.add('on');$('#b-shutter').classList.add('timing');
   cam.timerId=setInterval(()=>{n--;haptic(6);if(n<=0){clearInterval(cam.timerId);cam.timerId=null;cd.classList.remove('on');$('#b-shutter').classList.remove('timing');capture()}else cd.textContent=n},1000);
 };
-async function grabFrame(){const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;c.getContext('2d').drawImage(video,0,0);return{blob:await canvasBlob(c,.95),method:'frame'}}
+async function grabFrame(){const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;c.getContext('2d').drawImage(video,0,0);const blob=await canvasBlob(c,.95);c.width=c.height=1;return{blob,method:'frame'}}
+async function hiResFrame(){
+  const tr=cam.track;let prev=null,raised=false;
+  try{
+    const w0=video.videoWidth,h0=video.videoHeight,port=h0>w0;prev={w:w0,h:h0};
+    await tr.applyConstraints({width:{ideal:port?2160:3840},height:{ideal:port?3840:2160}});
+    for(let i=0;i<10;i++){await new Promise(r=>setTimeout(r,80));if(video.videoWidth*video.videoHeight>w0*h0*1.3&&video.readyState>=2){raised=true;await new Promise(r=>setTimeout(r,120));break}}
+  }catch{}
+  let out;try{out=await grabFrame()}finally{
+    if(prev&&raised){try{await tr.applyConstraints({width:{ideal:prev.w},height:{ideal:prev.h}})}catch{}
+      setTimeout(()=>{if(cam.state==='live'&&(video.paused||!video.videoWidth))startCamera()},1500)}}
+  return out;
+}
 async function capture(){
   if(cam.busy)return;cam.busy=true;const sb=$('#b-shutter');sb.disabled=true;haptic(18);
   if(!reduceMotion){const b=$('#blink');b.classList.remove('go');void b.offsetWidth;b.classList.add('go')}
@@ -669,21 +751,24 @@ async function capture(){
       try{const o={};if(cam.flash&&cam.photoCaps&&cam.photoCaps.fillLightMode&&cam.photoCaps.fillLightMode.includes('flash'))o.fillLightMode='flash';
         const blob=await cam.ic.takePhoto(o);if(blob&&blob.size)out={blob,method:'still'}}catch{}
     }
+    if(!out&&S.set.hires){try{out=await hiResFrame()}catch{}}
     if(!out)out=await grabFrame();
     const rec=camRecipe();
-    const meta=await saveBlob(out.blob,{recipe:rec,format:out.method==='still'?'JPEG · full-res still':'JPEG · video frame',lens:(cam.track&&cam.track.label)||'Camera',facing:cam.facing});
+    await saveBlob(out.blob,{recipe:rec,format:out.method==='still'?'JPEG · full-res still':'JPEG · video frame',lens:(cam.track&&cam.track.label)||'Camera',facing:cam.facing});
     updateCamUI();toast('Saved to Library',1400);
     if(navigator.storage&&navigator.storage.persist&&!store.get('persisted',false)){store.set('persisted',true);navigator.storage.persist().catch(()=>{})}
-  }catch(e){toast('Capture failed. Nothing was lost.')}
+  }catch(e){toast('Capture failed: '+((e&&(e.message||e.name))||'unknown error'),4500)}
   cam.busy=false;sb.disabled=false;
 }
+
 async function saveBlob(blob,o){
   const {img,url}=await loadImage(blob);
   const w=img.naturalWidth,h=img.naturalHeight;
-  const thumb=await makeThumb(img,o.recipe);URL.revokeObjectURL(url);
+  let thumb=null;try{thumb=await makeThumb(img,o.recipe)}catch{}
+  URL.revokeObjectURL(url);
   const meta={id:uid(),date:o.date||Date.now(),w,h,size:blob.size,format:o.format,lens:o.lens||'',facing:o.facing||'',fav:false,edited:false,exported:false,recipe:o.recipe,base:JSON.stringify(o.recipe),thumb};
   await DB.put('orig',{id:meta.id,blob});await DB.put('meta',meta);
-  meta.thumbUrl=URL.createObjectURL(thumb);S.lib.push(meta);renderLibrary();return meta;
+  meta.thumbUrl=URL.createObjectURL(thumb||blob);S.lib.push(meta);renderLibrary();return meta;
 }
 
 /* ---------- library ---------- */
@@ -757,7 +842,7 @@ async function normalizeImport(file){
 async function importFiles(files){
   let ok=0,bad=[];
   for(const f of files){try{toast('Importing '+(f.name||'photo')+'…',60000);const n=await normalizeImport(f);
-    await saveBlob(n.blob,{recipe:newRecipe('neutral'),format:n.format,lens:'Imported',date:f.lastModified||Date.now()});ok++}catch{bad.push(f.name||'file')}}
+    await saveBlob(n.blob,{recipe:newRecipe('neutral'),format:n.format,lens:'Imported',date:f.lastModified||Date.now()});ok++}catch(e){bad.push((f.name||'file')+(e&&e.message&&e.message!=='decode'?' ('+e.message+')':''))}}
   if(ok&&!bad.length)toast(`Imported ${ok} photo${ok>1?'s':''}`);else if(bad.length)toast(`Couldn’t read: ${bad.slice(0,2).join(', ')}${bad.length>2?'…':''}. Try exporting it as JPEG or PNG.`,4500);
   S.filter='all';renderLibrary();updateCamUI();
 }
@@ -767,20 +852,21 @@ $('#importInput').onchange=async e=>{const files=[...e.target.files];e.target.va
 
 /* ---------- export ---------- */
 async function renderPhotoBlob(id,opts){
-  const [p,o]=[S.lib.find(x=>x.id===id),await DB.get('orig',id)];
+  const p=S.lib.find(x=>x.id===id),o=await DB.get('orig',id);
   const {img,url}=await loadImage(o.blob);
   try{
-    const R=new Renderer(document.createElement('canvas'));let src=img,sw=img.naturalWidth,sh=img.naturalHeight,note='';
-    if(Math.max(sw,sh)>R.maxTex){src=scaledCanvas(img,R.maxTex);sw=src.width;sh=src.height;note='Downscaled to fit this device’s GPU limit.'}
+    const R=getThumbR();let src=img,sw=img.naturalWidth,sh=img.naturalHeight,note='';
+    const cap=Math.min(R.maxTex,8192);
+    if(Math.max(sw,sh)>cap){src=scaledCanvas(img,cap);sw=src.width;sh=src.height;note='Very large photo was scaled to fit your device.'}
     R.setSource(src,sw,sh);
-    const rec=p.recipe,cr=cropFor(rec.aspect,rec.rot||0,sw,sh);
+    const rec=p.recipe,cr=cropFor(rec.aspect,rec.rot||0,sw,sh,rec.zoom||1);
     const native=Math.max(cr.pw,cr.ph),long=opts.size==='full'?native:Math.min(native,+opts.size);
-    const [w,h]=fitSize(cr.r,long);R.render(rec,w,h,false,3);
-    const blob=await canvasBlob(R.c,opts.quality);
-    R.gl.getExtension('WEBGL_lose_context')&&R.gl.getExtension('WEBGL_lose_context').loseContext();
+    let [w,h]=fitSize(cr.r,long);const px=w*h;if(px>16e6){const k=Math.sqrt(16e6/px);w*=k;h*=k;note='Exported at 16 MP, the most iPhone Safari can encode.'}
+    R.render(rec,w,h,false,3);const blob=await glBlob(R,opts.quality);R.c.width=R.c.height=1;
     return{blob,w:Math.round(w),h:Math.round(h),note};
   }finally{URL.revokeObjectURL(url)}
 }
+
 function fileName(p,i){const d=new Date(p.date);const z=n=>String(n).padStart(2,'0');return`Camy_${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}${i?'_'+i:''}.jpg`}
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 function exportSheet(ids){
@@ -814,19 +900,23 @@ const batchExport=ids=>ids.length&&exportSheet(ids);
 
 /* ---------- editor ---------- */
 const CONTROLS={
-  tone:[['ev','Exposure',-2,2,.02],['contrast','Contrast',-1,1,.01],['highlights','Highlights',-1,1,.01],['shadows','Shadows',-1,1,.01],['fade','Fade',0,1,.01]],
-  color:[['temp','Temperature',-1,1,.01],['tint','Tint',-1,1,.01],['sat','Saturation',-1,1,.01],['vib','Vibrance',-1,1,.01],['mono','Black & white',0,1,.01]],
+  exposure:[['ev','Exposure',-2,2,.01],['fade','Black Lift',0,1,.01]],
+  contrast:[['contrast','S-Curve Contrast',-2,4,.01],['pivot','Pivot',.1,.9,.01]],
+  shadhi:[['highlights','Highlights',-1,1,.01],['shadows','Shadows',-1,1,.01]],
+  wb:[['temp','Temperature',-1,1,.01],['tint','Tint',-1,1,.01]],
+  sat:[['sat','Saturation',-1,1,.01],['vib','Vibrance',-1,1,.01],['mono','Black & White',0,1,.01]],
   grain:[['grain','Amplitude',0,2.5,.01],['grainSize','Grain Size',.5,3,.01]],
   halation:[['hal','Amount',0,1.5,.01],['halRad','Radius',.3,3,.01],['halThr','Threshold',.4,.95,.01]],
   finish:[['vig','Vignette',0,1,.01],['sharp','Sharpening',0,1,.01]]
 };
-const TWO=['grain','grainSize','halRad','halThr','hal'];
-const E={sub:'grain',open:false,p:null,img:null,url:null,prev:null,R:null,rec:null,undo:[],redo:[],panel:'looks',bypass:false,raf:0,saveT:0,thumbT:0,dirty:false};
+const SUBS={tone:[['exposure','Exposure'],['contrast','Contrast'],['shadhi','Shadow/Highlight']],color:[['wb','White Balance'],['sat','Saturation']],texture:[['grain','Grain'],['halation','Halation'],['finish','Finish']]};
+const TWO=['ev','grain','grainSize','halRad','halThr','hal','contrast','pivot'];
+const E={sub:{tone:'exposure',color:'wb',texture:'grain'},open:false,p:null,img:null,url:null,prev:null,R:null,rec:null,undo:[],redo:[],panel:'looks',bypass:false,raf:0,saveT:0,thumbT:0,dirty:false};
 const edCanvas=$('#edCanvas');
 const clone=o=>JSON.parse(JSON.stringify(o));
 async function openEditor(id){
   const p=S.lib.find(x=>x.id===id);if(!p)return;
-  E.p=p;E.rec=clone(p.recipe);E.undo=[];E.redo=[];E.bypass=false;E.panel='looks';
+  E.p=p;E.rec=Object.assign({zoom:1,pivot:.5,grainSize:1,grainPx:false,halRad:1,halThr:.7},clone(p.recipe));E.undo=[];E.redo=[];E.bypass=false;E.panel='looks';
   $('#editor').classList.add('on');$('#e-spin').style.display='grid';$('#e-spin').textContent='Developing…';E.open=true;
   try{
     if(!E.R)E.R=new Renderer(edCanvas);
@@ -841,10 +931,12 @@ async function closeEditor(){
 }
 function edRender(){
   if(!E.R||!E.prev)return;
-  const stage=$('#e-stage'),dpr=Math.min(devicePixelRatio||1,2);
-  const cr=cropFor(E.rec.aspect,E.rec.rot||0,E.prev.width,E.prev.height);
-  const maxW=stage.clientWidth*dpr,maxH=stage.clientHeight*dpr;let w=maxW,h=w/cr.r;if(h>maxH){h=maxH;w=h*cr.r}
-  const k=Math.min(1,2048/Math.max(w,h));E.R.render(E.bypass?E.rec:E.rec,w*k,h*k,E.bypass,3);
+  const stage=$('#e-stage'),dpr=Math.min(devicePixelRatio||1,3);
+  const cr=cropFor(E.rec.aspect,E.rec.rot||0,E.prev.width,E.prev.height,E.rec.zoom||1);
+  const SW=stage.clientWidth,SH=stage.clientHeight;let cw=SW,ch=SW/cr.r;if(ch>SH){ch=SH;cw=SH*cr.r}
+  cw=Math.max(1,Math.floor(cw));ch=Math.max(1,Math.floor(ch));edCanvas.style.width=cw+'px';edCanvas.style.height=ch+'px';
+  const k=Math.min(1,2048/Math.max(cw*dpr,ch*dpr));
+  E.R.render(E.rec,cw*dpr*k,ch*dpr*k,E.bypass,3);
   $('#e-tag').classList.toggle('on',E.bypass);
 }
 const sched=()=>{if(!E.raf)E.raf=requestAnimationFrame(()=>{E.raf=0;edRender()})};
@@ -875,9 +967,9 @@ $('#e-info').onclick=()=>{const p=E.p;sheet(`<h3>Photo info</h3><dl class="kv"><
 const cmpOn=()=>{E.bypass=true;edRender()},cmpOff=()=>{E.bypass=false;edRender()};
 ['#e-cmp','#e-stage'].forEach(s=>{const el=$(s);el.addEventListener('pointerdown',e=>{if(e.target.closest('.ed-spin'))return;cmpOn()});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,cmpOff))});
 $('#e-cmp').addEventListener('contextmenu',e=>e.preventDefault());
-$('#e-reset').onclick=()=>{E.lastCommit=clone(E.rec);E.rec=newRecipe(E.rec.look);commit();edRender();renderEdUI();toast('Reset to look')};
+$('#e-reset').onclick=()=>{E.lastCommit=clone(E.rec);E.rec=newRecipe(E.rec.look,{aspect:E.rec.aspect,rot:E.rec.rot,zoom:E.rec.zoom});commit();edRender();renderEdUI();toast('Reset to look')};
 $('#e-copy').onclick=()=>{const r=clone(E.rec);S.clip=r;updateEdBtns();toast('Edit settings copied')};
-$('#e-paste').onclick=()=>{if(!S.clip)return;E.lastCommit=clone(E.rec);const keep={aspect:E.rec.aspect,rot:E.rec.rot};E.rec=Object.assign(clone(S.clip),keep);commit();edRender();renderEdUI();toast('Settings pasted')};
+$('#e-paste').onclick=()=>{if(!S.clip)return;E.lastCommit=clone(E.rec);const keep={aspect:E.rec.aspect,rot:E.rec.rot,zoom:E.rec.zoom};E.rec=Object.assign(clone(S.clip),keep);commit();edRender();renderEdUI();toast('Settings pasted')};
 $('#e-savelook').onclick=async()=>{
   const name=await promptSheet('Save as custom look',getLook(E.rec.look).name+' copy','Save');if(!name)return;
   const v={};for(const k in NEUTRAL)v[k]=Array.isArray(E.rec[k])?E.rec[k].slice():E.rec[k];
@@ -887,41 +979,51 @@ $('#e-savelook').onclick=async()=>{
 (()=>{const t=$('#e-tabs');[['looks','looks','Looks'],['tone','tone','Tone'],['color','palette','Color'],['texture','texture','Texture'],['crop','crop','Crop']].forEach(([p,i,l])=>{const b=document.createElement('button');b.className='t';b.setAttribute('role','tab');b.dataset.p=p;b.innerHTML=ic(i,24)+'<span>'+l+'</span>';b.onclick=()=>{E.panel=p;renderEdUI()};t.appendChild(b)});
   const f=document.createElement('button');f.className='fab';f.id='e-export';f.setAttribute('aria-label','Export');t.appendChild(f);
   f.onclick=async()=>{await flushSave();exportSheet([E.p.id])}})();
-function fmtVal(k,v){if(k==='ev')return(v>=0?'+':'')+v.toFixed(2);if(TWO.includes(k))return v.toFixed(2);const n=Math.round(v*100);return(n>0&&['contrast','highlights','shadows','temp','tint','sat','vib'].includes(k)?'+':'')+n}
+function fmtVal(k,v){if(k==='ev')return(v>=0?'+':'')+v.toFixed(2);if(TWO.includes(k))return v.toFixed(2);const n=Math.round(v*100);return(n>0&&['highlights','shadows','temp','tint','sat','vib'].includes(k)?'+':'')+n}
+function addSlider(pn,k,label,mn,mx,st,base){
+  const w=document.createElement('div');w.className='sl';
+  w.innerHTML=`<div class="lab"><button aria-label="Reset ${label}">${label}</button><span class="v"></span></div><input type="range" min="${mn}" max="${mx}" step="${st}" aria-label="${label}">`;
+  const r=$('input',w),v=$('.v',w);r.value=E.rec[k];
+  const paint=()=>{r.style.setProperty('--p',((r.value-mn)/(mx-mn)*100)+'%');v.textContent=fmtVal(k,+r.value);v.classList.toggle('mod',Math.abs(+r.value-base[k])>1e-3)};paint();
+  r.addEventListener('pointerdown',()=>{E.lastCommit=clone(E.rec)});r.addEventListener('keydown',()=>{if(!E.lastCommit)E.lastCommit=clone(E.rec)});
+  r.oninput=()=>{if(!E.lastCommit)E.lastCommit=clone(E.rec);E.rec[k]=+r.value;paint();sched()};
+  r.onchange=()=>{if(E.lastCommit&&JSON.stringify(E.lastCommit)!==JSON.stringify(E.rec))commit();else E.lastCommit=null};
+  $('button',w).onclick=(()=>{let t=0;return()=>{const n=performance.now();if(n-t<400){E.lastCommit=clone(E.rec);E.rec[k]=base[k];r.value=base[k];paint();commit();edRender()}t=n}})();
+  pn.appendChild(w);
+}
 function renderEdUI(){
   updateEdBtns();
-  $$('#e-tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.p===E.panel));
+  $$('#e-tabs button.t').forEach(b=>b.setAttribute('aria-selected',b.dataset.p===E.panel));
   const pn=$('#e-panel');pn.className='ed-panel'+(E.panel==='looks'?' looks':'');pn.innerHTML='';
   if(E.panel==='looks'){
     allLooks().forEach(l=>{
       const d=document.createElement('button');d.className='lk'+(E.rec.look===l.id?' on':'');d.setAttribute('aria-label',l.name);
       const c=document.createElement('canvas');c.width=c.height=172;d.appendChild(c);const s=document.createElement('span');s.textContent=l.name;d.appendChild(s);pn.appendChild(d);
       try{const R=getThumbR();const src=scaledCanvas(E.prev,260);R.setSource(src,src.width,src.height);const rec=Object.assign(newRecipe(l.id),{aspect:'1:1',rot:E.rec.rot});R.render(rec,172,172,false,3);c.getContext('2d').drawImage(R.c,0,0)}catch{}
-      d.onclick=()=>{E.lastCommit=clone(E.rec);const keep={aspect:E.rec.aspect,rot:E.rec.rot};E.rec=newRecipe(l.id,keep);commit();edRender();renderEdUI();haptic(8)};
+      d.onclick=()=>{E.lastCommit=clone(E.rec);const keep={aspect:E.rec.aspect,rot:E.rec.rot,zoom:E.rec.zoom};E.rec=newRecipe(l.id,keep);commit();edRender();renderEdUI();haptic(8)};
     });
   }else if(E.panel==='crop'){
-    pn.innerHTML=`<div class="pills" id="cr-a"></div><div class="pills"><button class="chip" id="cr-rot">${ic('rotate',16)}Rotate 90°</button></div><p style="color:var(--mute);font-size:12.5px;margin:2px 0">Crops are non-destructive. The original keeps its full frame.</p>`;
-    [['orig','Original'],['3:2','3:2'],['4:3','4:3'],['1:1','1:1'],['16:9','16:9']].forEach(([k,l])=>{const b=document.createElement('button');b.className='chip'+(E.rec.aspect===k?' on':'');b.textContent=l;b.onclick=()=>{E.lastCommit=clone(E.rec);E.rec.aspect=k;commit();edRender();renderEdUI();haptic(6)};$('#cr-a',pn).appendChild(b)});
+    pn.innerHTML=`<div class="pills" id="cr-a" style="flex-wrap:nowrap;overflow-x:auto"></div><div class="sl"><div class="lab"><button>Punch-in zoom</button><span class="v"></span></div><input type="range" min="1" max="4" step="0.01" aria-label="Punch-in zoom"></div><div class="pills" id="cr-z"></div><div class="pills"><button class="chip" id="cr-rot">${ic('rotate',16)}Rotate 90°</button></div><p style="color:var(--mute);font-size:12.5px;margin:2px 0">Crops are non-destructive. The original keeps its full frame and is never stretched.</p>`;
+    const pr=E.prev.width/E.prev.height;
+    ASPECT_LIST.forEach(([k,l])=>{const b=document.createElement('button');b.className='chip'+(E.rec.aspect===k?' on':'');b.style.flex='none';
+      const r=ASPECTS[k]||pr;const w=r>=1?22:Math.round(22*r),h=r>=1?Math.round(22/r):22;b.innerHTML=`<i class="ar" style="width:${w}px;height:${h}px"></i>${l}`;
+      b.onclick=()=>{E.lastCommit=clone(E.rec);E.rec.aspect=k;commit();edRender();renderEdUI();haptic(6)};$('#cr-a',pn).appendChild(b)});
+    const r=$('input',pn),v=$('.v',pn);r.value=E.rec.zoom||1;
+    const paint=()=>{r.style.setProperty('--p',((r.value-1)/3*100)+'%');v.textContent=(+r.value).toFixed(2)+'×'};paint();
+    r.addEventListener('pointerdown',()=>{E.lastCommit=clone(E.rec)});
+    r.oninput=()=>{if(!E.lastCommit)E.lastCommit=clone(E.rec);E.rec.zoom=+r.value;paint();sched()};
+    r.onchange=()=>{if(E.lastCommit&&JSON.stringify(E.lastCommit)!==JSON.stringify(E.rec))commit();else E.lastCommit=null};
+    [1,1.5,2,3].forEach(z=>{const b=document.createElement('button');b.className='chip'+(Math.abs((E.rec.zoom||1)-z)<.01?' on':'');b.textContent=z+'×';b.onclick=()=>{E.lastCommit=clone(E.rec);E.rec.zoom=z;commit();edRender();renderEdUI();haptic(6)};$('#cr-z',pn).appendChild(b)});
     $('#cr-rot',pn).onclick=()=>{E.lastCommit=clone(E.rec);E.rec.rot=((E.rec.rot||0)+1)%4;commit();edRender();haptic(6)};
   }else{
-    const base=lookValues(E.rec.look);
-    if(E.panel==='texture'){const sp=document.createElement('div');sp.className='subpills';
-      [['grain','Grain'],['halation','Halation'],['finish','Finish']].forEach(([k,l])=>{const b=document.createElement('button');b.className='pill'+(E.sub===k?' on':'');b.textContent=l;b.onclick=()=>{E.sub=k;renderEdUI()};sp.appendChild(b)});pn.appendChild(sp)}
-    (E.panel==='texture'?CONTROLS[E.sub]:CONTROLS[E.panel]).forEach(([k,label,mn,mx,st])=>{
-      const w=document.createElement('div');w.className='sl';
-      w.innerHTML=`<div class="lab"><button aria-label="Reset ${label}">${label}</button><span class="v"></span></div><input type="range" min="${mn}" max="${mx}" step="${st}" aria-label="${label}">`;
-      const r=$('input',w),v=$('.v',w);r.value=E.rec[k];
-      const paint=()=>{r.style.setProperty('--p',((r.value-mn)/(mx-mn)*100)+'%');v.textContent=fmtVal(k,+r.value);v.classList.toggle('mod',Math.abs(+r.value-base[k])>1e-3)};paint();
-      r.addEventListener('pointerdown',()=>{E.lastCommit=clone(E.rec)});r.addEventListener('keydown',()=>{if(!E.lastCommit)E.lastCommit=clone(E.rec)});
-      r.oninput=()=>{if(!E.lastCommit)E.lastCommit=clone(E.rec);E.rec[k]=+r.value;paint();sched()};
-      r.onchange=()=>{if(E.lastCommit&&JSON.stringify(E.lastCommit)!==JSON.stringify(E.rec))commit();else E.lastCommit=null};
-      $('button',w).ondblclick=$('button',w).onclick=(()=>{let t=0;return()=>{const n=performance.now();if(n-t<400){E.lastCommit=clone(E.rec);E.rec[k]=base[k];r.value=base[k];paint();commit();edRender()}t=n}})();
-      pn.appendChild(w);
-    });
-    if(E.panel==='texture'&&E.sub==='grain'){const t=document.createElement('button');t.className='row tg';t.innerHTML=`<span class="l">Force Pixel Size Grain</span><span class="sw" role="switch" aria-checked="${!!E.rec.grainPx}"></span>`;
+    const base=lookValues(E.rec.look);let key=E.panel;
+    if(SUBS[E.panel]){const sp=document.createElement('div');sp.className='subpills';sp.style.overflowX='auto';
+      SUBS[E.panel].forEach(([k,l])=>{const b=document.createElement('button');b.className='pill'+(E.sub[E.panel]===k?' on':'');b.style.flex='none';b.textContent=l;b.onclick=()=>{E.sub[E.panel]=k;renderEdUI()};sp.appendChild(b)});pn.appendChild(sp);key=E.sub[E.panel]}
+    CONTROLS[key].forEach(([k,label,mn,mx,st])=>addSlider(pn,k,label,mn,mx,st,base));
+    if(key==='grain'){const t=document.createElement('button');t.className='row tg';t.innerHTML=`<span class="l">Force Pixel Size Grain</span><span class="sw" role="switch" aria-checked="${!!E.rec.grainPx}"></span>`;
       t.onclick=()=>{E.lastCommit=clone(E.rec);E.rec.grainPx=!E.rec.grainPx;commit();edRender();renderEdUI();haptic(6)};pn.appendChild(t);
-      const h=document.createElement('p');h.className='tgh';h.textContent='Off: grain scales with image resolution so exports match the preview. On: grain is always true pixel size, so it looks finer on large exports.';pn.appendChild(h)}
-    const hint=document.createElement('p');hint.style.cssText='color:var(--mute);font-size:12px;margin:6px 0 2px';hint.textContent='Double-tap a label to reset it to the look’s value.';pn.appendChild(hint);
+      const h=document.createElement('p');h.className='tgh';h.textContent='Off: grain scales with image resolution so exports match the preview. On: grain is always true pixel size.';pn.appendChild(h)}
+    const hint=document.createElement('p');hint.style.cssText='color:var(--mute);font-size:12px;margin:6px 0 2px';hint.textContent='Tap a label twice to reset it to the look’s value.';pn.appendChild(hint);
   }
 }
 addEventListener('resize',()=>{if(E.open)sched()});
@@ -969,6 +1071,7 @@ function renderSettings(){
   const canFull=cam.ic&&typeof cam.ic.takePhoto==='function';
   b.innerHTML=`
   <div class="sec-h">Capture</div><div class="set">
+    ${sw('hires','4K frame capture','On iPhone Safari, briefly switches the camera to 4K for each photo. Turn off if the preview ever flickers after a shot.')}
     ${sw('fullres','Full-resolution stills',canFull?'Uses the camera’s still-photo mode when available.':'Not supported by this browser. Frames are grabbed from the video stream.')}
     <div class="row"><span class="l">Grid overlay</span><span class="sw" role="switch" aria-checked="${S.grid}" id="sw-grid" tabindex="0"></span></div>
     ${sw('haptics','Haptics','Vibration on shutter and focus (not available on iPhone Safari).')}
