@@ -820,8 +820,9 @@ void main(){
  }
  if(uLtm>0.){
   float Lb0=lum(tapL(vUv,uLtmLod));float Lb=pow(pow(Lb0,2.2)*exp2(uEv),1./2.2);float Lc=lum(g);
+  Lb=mix(Lb,Lc,smoothstep(.015,.14,abs(Lc-Lb))); // near strong edges use the pixel's own brightness: no glow ring around trees or buildings
   float ga=pow(clamp(.40/(Lb+.05),.62,1.7),uLtm*.6);
-  g*=mix(ga,1.,smoothstep(.02,.22,abs(Lc-Lb)));
+  g*=ga;
  }
  if(uMids!=0.){float lm=lum(g);g*=1.+uMids*1.6*lm*(1.-lm);}
  if(uBlackP>0.){float lb2=lum(g);g+=(1.-g)*uBlackP*.018*(1.-smoothstep(0.,.12,lb2));}
@@ -835,6 +836,8 @@ void main(){
  if(uHslOn>.5){
   vec3 hv=rgb2hsv(clamp(g,0.,1.));
   vec3 bl=pow(clamp(tapL(vUv,uHslLod),0.,1.),vec3(2.2))*tg*uGains;bl=pow(max(bl,0.),vec3(1./2.2));
+  vec3 ow=pow(clamp(tap(vUv),0.,1.),vec3(2.2))*tg*uGains;ow=pow(max(ow,0.),vec3(1./2.2));
+  bl=mix(bl,ow,smoothstep(.005,.025,length(ow-bl))); // at edges use the pixel's own colour, so no halo ring forms
   vec3 bh=rgb2hsv(clamp(bl,0.,1.));float hd=bh.x*360.;
   float cs[9]=float[9](0.,30.,60.,120.,180.,240.,270.,300.,360.);
   vec3 adj=vec3(0.);
